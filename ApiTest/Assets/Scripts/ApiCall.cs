@@ -6,6 +6,7 @@ using System.IO;
 using System;
 using TMPro;
 using UnityEngine.InputSystem;
+using System.Security.Cryptography.X509Certificates;
 
 public class ApiCall : MonoBehaviour
 {
@@ -231,6 +232,12 @@ public class ApiCall : MonoBehaviour
         using (UnityWebRequest request = UnityWebRequest.Post(baseUrl + "/upload", formData))
         {
             request.SetRequestHeader("Authorization", apiKey);
+            request.timeout = 30; // Set timeout to 30 seconds
+            
+            // Handle certificate bypass for development (remove in production)
+            #if UNITY_EDITOR
+            request.certificateHandler = new BypassCertificate();
+            #endif
             
             yield return request.SendWebRequest();
             
@@ -239,14 +246,35 @@ public class ApiCall : MonoBehaviour
                 string uploadResponse = request.downloadHandler.text;
                 Debug.Log("Upload Response: " + uploadResponse);
                 
-                string uploadUrl = JsonUtility.FromJson<UploadResponse>(uploadResponse).upload_url;
+                string uploadUrl = "";
+                try
+                {
+                    uploadUrl = JsonUtility.FromJson<UploadResponse>(uploadResponse).upload_url;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError("Failed to parse upload response: " + e.Message);
+                    if (statusText != null)
+                        statusText.text = "Upload response error";
+                    yield break;
+                }
+                
                 yield return StartCoroutine(StartTranscription(uploadUrl));
             }
             else
             {
-                Debug.LogError("Upload Error: " + request.error);
+                string errorMsg = request.error;
+                if (request.responseCode == 0 && errorMsg.Contains("unitytls"))
+                {
+                    errorMsg = "TLS/SSL Certificate Error - Check network connection";
+                }
+                
+                Debug.LogError("Upload Error: " + errorMsg);
+                Debug.LogError("Response Code: " + request.responseCode);
+                Debug.LogError("Response Body: " + request.downloadHandler.text);
+                
                 if (statusText != null)
-                    statusText.text = "Upload failed: " + request.error;
+                    statusText.text = "Upload failed: " + errorMsg;
             }
         }
     }
@@ -299,6 +327,11 @@ public class ApiCall : MonoBehaviour
         using (UnityWebRequest request = UnityWebRequest.Post(baseUrl + "/transcript", jsonData, "application/json"))
         {
             request.SetRequestHeader("Authorization", apiKey);
+            request.timeout = 30;
+            
+            #if UNITY_EDITOR
+            request.certificateHandler = new BypassCertificate();
+            #endif
             
             yield return request.SendWebRequest();
             
@@ -307,14 +340,35 @@ public class ApiCall : MonoBehaviour
                 string transcriptResponse = request.downloadHandler.text;
                 Debug.Log("Transcript Response: " + transcriptResponse);
                 
-                string transcriptId = JsonUtility.FromJson<TranscriptResponse>(transcriptResponse).id;
+                string transcriptId = "";
+                try
+                {
+                    transcriptId = JsonUtility.FromJson<TranscriptResponse>(transcriptResponse).id;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError("Failed to parse transcript response: " + e.Message);
+                    if (statusText != null)
+                        statusText.text = "Transcription response error";
+                    yield break;
+                }
+                
                 yield return StartCoroutine(CheckTranscriptionStatus(transcriptId));
             }
             else
             {
-                Debug.LogError("Transcription Error: " + request.error);
+                string errorMsg = request.error;
+                if (request.responseCode == 0 && errorMsg.Contains("unitytls"))
+                {
+                    errorMsg = "TLS/SSL Certificate Error during transcription";
+                }
+                
+                Debug.LogError("Transcription Error: " + errorMsg);
+                Debug.LogError("Response Code: " + request.responseCode);
+                Debug.LogError("Response Body: " + request.downloadHandler.text);
+                
                 if (statusText != null)
-                    statusText.text = "Transcription failed: " + request.error;
+                    statusText.text = "Transcription failed: " + errorMsg;
             }
         }
     }
@@ -322,19 +376,42 @@ public class ApiCall : MonoBehaviour
     IEnumerator CheckTranscriptionStatus(string transcriptId)
     {
         string pollUrl = baseUrl + "/transcript/" + transcriptId;
+        int maxAttempts = 30; // Maximum 60 seconds (30 * 2 seconds)
+        int attempts = 0;
         
-        while (true)
+        while (attempts < maxAttempts)
         {
             using (UnityWebRequest request = UnityWebRequest.Get(pollUrl))
             {
                 request.SetRequestHeader("Authorization", apiKey);
+                request.timeout = 10;
+                
+                #if UNITY_EDITOR
+                request.certificateHandler = new BypassCertificate();
+                #endif
                 
                 yield return request.SendWebRequest();
                 
                 if (request.result == UnityWebRequest.Result.Success)
                 {
                     string response = request.downloadHandler.text;
-                    TranscriptStatus status = JsonUtility.FromJson<TranscriptStatus>(response);
+                    TranscriptStatus status = null;
+                    
+                    try
+                    {
+                        status = JsonUtility.FromJson<TranscriptStatus>(response);
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError("Failed to parse status response: " + e.Message);
+                        attempts++;
+                    }
+                    
+                    if (status == null)
+                    {
+                        yield return new WaitForSeconds(2f);
+                        continue;
+                    }
                     
                     Debug.Log("Transcription Status: " + status.status);
                     
@@ -358,12 +435,27 @@ public class ApiCall : MonoBehaviour
                 else
                 {
                     Debug.LogError("Status Check Error: " + request.error);
-                    yield break;
+                    Debug.LogError("Response Code: " + request.responseCode);
+                    attempts++;
+                    
+                    if (attempts >= maxAttempts)
+                    {
+                        if (statusText != null)
+                            statusText.text = "Status check failed - Max attempts reached";
+                        yield break;
+                    }
+                    
+                    yield return new WaitForSeconds(2f);
+                    continue;
                 }
             }
             
+            attempts++;
             yield return new WaitForSeconds(2f);
         }
+        
+        if (statusText != null)
+            statusText.text = "Transcription timeout";
     }
 }
 
@@ -387,3 +479,13 @@ public class TranscriptStatus
     public string text;
     public string error;
 }
+
+#if UNITY_EDITOR
+public class BypassCertificate : CertificateHandler
+{
+    protected override bool ValidateCertificate(byte[] certificateData)
+    {
+        return true; // Bypass certificate validation in editor for testing
+    }
+}
+#endif
