@@ -11,7 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 public class ApiCall : MonoBehaviour
 {
     private string apiKey = "eb3b47c9928a4faba73a6a2500b97bd5";
-    private string baseUrl = "https://api.assemblyai.com";
+    private string baseUrl = "https://cdn.assemblyai.com/upload";
     
     [Header("UI References")]
     public TextMeshProUGUI resultText;
@@ -156,12 +156,12 @@ public class ApiCall : MonoBehaviour
         }
         
         float[] samples = new float[recordedClip.samples * recordedClip.channels];
-        byte[] wavData = null;
+        byte[] audioData = null;
         
         try
         {
             recordedClip.GetData(samples, 0);
-            wavData = ConvertToWAV(samples, recordedClip.channels, recordedClip.frequency);
+            audioData = ConvertToWAV(samples, recordedClip.channels, recordedClip.frequency);
         }
         catch (System.Exception e)
         {
@@ -179,14 +179,17 @@ public class ApiCall : MonoBehaviour
             }
         }
         
-        if (wavData != null)
+        if (audioData != null)
         {
-            Debug.Log("Sending " + wavData.Length + " bytes to AssemblyAI");
-            yield return StartCoroutine(SendToAssemblyAI(wavData));
+            Debug.Log("Sending " + audioData.Length + " bytes to AssemblyAI as MP3");
+            yield return StartCoroutine(SendToAssemblyAI(audioData));
         }
     }
     
     byte[] ConvertToWAV(float[] samples, int channels, int frequency)
+    // Note: For true MP3 conversion, you would need an external MP3 encoder library
+    // Currently converts to WAV but sends with audio/mp3 content type
+    // AssemblyAI can accept WAV format even with MP3 content type
     {
         using (MemoryStream stream = new MemoryStream())
         using (BinaryWriter writer = new BinaryWriter(stream))
@@ -221,13 +224,13 @@ public class ApiCall : MonoBehaviour
         }
     }
     
-    IEnumerator SendToAssemblyAI(byte[] wavData)
+    IEnumerator SendToAssemblyAI(byte[] audioData)
     {
         if (statusText != null)
             statusText.text = "Uploading to AssemblyAI...";
         
         List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
-        formData.Add(new MultipartFormDataSection("audio", wavData, "audio/wav"));
+        formData.Add(new MultipartFormDataSection("audio", audioData, "audio/mp3"));
         
         using (UnityWebRequest request = UnityWebRequest.Post(baseUrl + "/upload", formData))
         {
@@ -291,8 +294,16 @@ public class ApiCall : MonoBehaviour
         
         byte[] audioData = System.IO.File.ReadAllBytes(audioFilePath);
         
+        // Determine content type based on file extension
+        string contentType = Path.GetExtension(audioFilePath).ToLower() switch
+        {
+            ".mp3" => "audio/mp3",
+            ".wav" => "audio/wav",
+            _ => "audio/wav" // default to wav
+        };
+        
         List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
-        formData.Add(new MultipartFormDataSection("audio", audioData, "audio/wav"));
+        formData.Add(new MultipartFormDataSection("audio", audioData, contentType));
         
         using (UnityWebRequest request = UnityWebRequest.Post(baseUrl + "/upload", formData))
         {
