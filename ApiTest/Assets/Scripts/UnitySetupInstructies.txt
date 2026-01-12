@@ -1,0 +1,55 @@
+UNITY SETUP INSTRUCTIES VOOR API CALL SCRIPT
+
+1. SCENE SETUP:
+   - Maak een leeg GameObject en noem het "ApiManager"
+   - Voeg het ApiCall.cs script toe aan de ApiManager
+   - Zorg ervoor dat de ApiManager in je scene aanwezig is
+
+2. UI ELEMENTEN NODIG:
+   - Maak twee TextMeshPro - Text elementen:
+     * Eén voor resultText (toont transcriptie resultaten)
+     * Eén voor statusText (toont status updates)
+   - Sleep deze elementen naar de corresponderende velden in de ApiCall component
+
+3. MICROFOON PERMISSIES:
+   - In Unity Edit > Project Settings > Player:
+     * Bij "Other Settings", zet "Microphone Usage Description" aan
+     * Voeg een beschrijving toe (bv: "Microfoon nodig voor spraakherkenning")
+   - Voor iOS: Zet "Require Microphone" aan bij iOS settings
+   - Voor Android: Voeg toe aan AndroidManifest.xml:
+     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+4. NETWERK PERMISSIES:
+   - Voor iOS: Zet "Allow HTTP to Any Domain" aan OF gebruik HTTPS URLs
+   - Voor Android: Voeg toe aan AndroidManifest.xml:
+     <uses-permission android:name="android.permission.INTERNET" />
+
+5. PACKAGES NODIG:
+   - TextMeshPro package (standaard in moderne Unity versies)
+   - Unity Web Request (standaard aanwezig)
+
+6. API INSTELLINGEN:
+   - De API key staat al in het script: "eb3b47c9928a4faba73a6a2500b97bd5"
+   - Base URL is ingesteld op: "https://api.assemblyai.com/v2"
+   - Test of deze key nog geldig is
+
+7. TESTEN:
+   - Start de scene
+   - Druk op T toets en houd vast om op te nemen
+   - Laat T los om transcriptie te starten
+   - Bekijk resultaten in de UI elementen
+
+8. EVENTUELE PROBLEMEN:
+   - Als microfoon niet werkt: check permissies in Player Settings
+   - Als API calls falen: check internet connection en API key
+   - Als UI niet werkt: zorg dat TextMeshPro components correct gelinkt zijn
+
+9. EXTRA FEATURES:
+   - Script heeft ook UploadAudioForTranscription() methode
+   - Kan gebruikt worden voor audio bestanden via code
+   - Recorder settings zijn aanpasbaar in Inspector
+
+10. BUILD INSTELLINGEN:
+    - Zorg dat juiste platform geselecteerd is (iOS/Android/PC)
+    - Check permissies voor mobiele platforms
+    - Test op target apparaat voor microfoon functionaliteit
