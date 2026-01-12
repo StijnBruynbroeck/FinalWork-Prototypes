@@ -30,7 +30,7 @@ UNITY SETUP INSTRUCTIES VOOR API CALL SCRIPT
 
 6. API INSTELLINGEN:
    - De API key staat al in het script: "eb3b47c9928a4faba73a6a2500b97bd5"
-   - Base URL is ingesteld op: "https://api.assemblyai.com/v2"
+   - Base URL is ingesteld op: "https://api.assemblyai.com"
    - Test of deze key nog geldig is
 
 7. TESTEN:

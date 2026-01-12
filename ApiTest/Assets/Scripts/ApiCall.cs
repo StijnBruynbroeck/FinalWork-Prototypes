@@ -9,7 +9,7 @@ using TMPro;
 public class ApiCall : MonoBehaviour
 {
     private string apiKey = "eb3b47c9928a4faba73a6a2500b97bd5";
-    private string baseUrl = "https://api.assemblyai.com/v2";
+    private string baseUrl = "https://api.assemblyai.com";
     
     [Header("UI References")]
     public TextMeshProUGUI resultText;
