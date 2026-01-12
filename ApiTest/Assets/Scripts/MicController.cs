@@ -61,4 +61,14 @@ public class MicController : MonoBehaviour
         
         audioSource.Play(); 
     }
+
+    void OnDisable()
+    {
+        // Check of we aan het opnemen zijn en stop het netjes
+        if (Microphone.IsRecording(microphoneDevice))
+        {
+            Microphone.End(microphoneDevice);
+            Debug.Log("Microfoon opname gestopt.");
+        }
+    }
 }
