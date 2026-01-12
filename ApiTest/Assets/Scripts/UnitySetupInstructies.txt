@@ -50,6 +50,70 @@ UNITY SETUP INSTRUCTIES VOOR API CALL SCRIPT
    - Recorder settings zijn aanpasbaar in Inspector
 
 10. BUILD INSTELLINGEN:
-    - Zorg dat juiste platform geselecteerd is (iOS/Android/PC)
-    - Check permissies voor mobiele platforms
-    - Test op target apparaat voor microfoon functionaliteit
+     - Zorg dat juiste platform geselecteerd is (iOS/Android/PC)
+     - Check permissies voor mobiele platforms
+     - Test op target apparaat voor microfoon functionaliteit
+
+---
+MICROCONTROLLER SCRIPT MANUAL
+---
+
+11. MICCONTROLLER SETUP:
+    - Maak een leeg GameObject en noem het "MicController"
+    - Voeg een AudioSource component toe aan hetzelfde GameObject
+    - Voeg het MicController.cs script toe aan het GameObject
+    - Het script automatisch een AudioSource component vereisen
+
+12. FUNCTIONALITEIT:
+    - Automatisch detecteren en starten van de eerste beschikbare microfoon
+    - Real-time volume monitoring van de microfoon input
+    - Continue audio capture met loop (10 seconden buffer, 44100 Hz)
+    - Automatic cleanup wanneer het script wordt disabled
+
+13. WERKING:
+    - Start(): Detecteert microfoon en start opname automatisch
+    - Update(): Monitor microfoon volume elke frame
+    - StartMicrophone(): Start continue opname met AudioSource
+    - OnDisable(): Stopt opname netjes wanneer component wordt uitgeschakeld
+
+14. VOLUME MONITORING:
+    - Leest elke frame 128 samples van de microfoon
+    - Berekent gemiddelde absolute amplitude
+    - Logt volume naar console wanneer niveau > 0.01f (1%)
+    - Volume wordt weergegeven als percentage (level * 100)
+
+15. AUDIO INSTELLINGEN:
+    - Opname formaat: 10 seconden loop buffer
+    - Sample rate: 44100 Hz
+    - Continuous recording: true (niet stoppen na 10 seconden)
+    - Loop playback: true
+
+16. GEBRUIK VOORBEELDEN:
+    - Volume indicator voor spraakherkenning
+    - Audio level visualization
+    - Detectie wanneer er wordt gesproken
+    - Real-time audio monitoring
+
+17. DEBUG INFORMATIE:
+    - Logt geselecteerde microfoon: "Geselecteerde microfoon: [naam]"
+    - Logt volume wanneer > 1%: "Microfoon Volume: [percentage]"
+    - Logt fout als geen microfoon: "Geen microfoon gevonden!"
+    - Logt stop bericht: "Microfoon opname gestopt."
+
+18. INTEGRATIE TIPS:
+    - Combineer met ApiCall script voor spraak-naar-tekst
+    - Gebruik volume data voor visualisaties
+    - Voeg threshold detectie toe voor activiteit detectie
+    - Kan uitgebreid worden met audio processing
+
+19. TROUBLESHOOTING:
+    - Geen audio: Check of AudioSource component aanwezig is
+    - Geen microfoon: Check microfoon permissies in Player Settings
+    - Geen logs: Check Unity Console voor foutmeldingen
+    - Performance: Reduce sample buffer indien nodig
+
+20. PLATFORM SPECIFIEK:
+    - Web: Werkt alleen in HTTPS omgeving met microfoon permissie
+    - Mobile: Vereist runtime microfoon permissie van gebruiker
+    - Standalone: Werkt met systeem microfoon apparaten
+    - Editor: Werkt met development microfoon setup
