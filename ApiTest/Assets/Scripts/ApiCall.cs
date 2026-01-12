@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using TMPro;
+using UnityEngine.InputSystem;
 
 public class ApiCall : MonoBehaviour
 {
@@ -22,6 +23,7 @@ public class ApiCall : MonoBehaviour
     private bool isRecording = false;
     private AudioClip recordedClip;
     private string microphoneDevice;
+    private bool tKeyPressed = false;
     
     void Start()
     {
@@ -35,8 +37,30 @@ public class ApiCall : MonoBehaviour
         else
         {
             Debug.LogError("No microphone found!");
-            if (statusText != null)
-                statusText.text = "No microphone found!";
+        if (statusText != null)
+            statusText.text = "No microphone found!";
+        }
+    }
+    
+    void OnDestroy()
+    {
+        StopRecording();
+        
+        if (recordedClip != null)
+        {
+            Destroy(recordedClip);
+            recordedClip = null;
+        }
+    }
+    
+    void OnApplicationQuit()
+    {
+        StopRecording();
+        
+        if (recordedClip != null)
+        {
+            Destroy(recordedClip);
+            recordedClip = null;
         }
     }
     
@@ -45,68 +69,72 @@ public class ApiCall : MonoBehaviour
         if (statusText != null)
             statusText.text = "Testing AssemblyAI connection...";
         
-        using (UnityWebRequest request = UnityWebRequest.Get(baseUrl + "/account"))
-        {
-            request.SetRequestHeader("Authorization", apiKey);
-            request.SetRequestHeader("Content-Type", "application/json");
+        // Remove the account test since /account endpoint doesn't exist
+        // Instead just show ready message
+        yield return new WaitForSeconds(0.5f);
+        
+        Debug.Log("AssemblyAI API Key configured");
+        
+        if (resultText != null)
+            resultText.text = "Press and hold T to record";
             
-            yield return request.SendWebRequest();
-            
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                string response = request.downloadHandler.text;
-                Debug.Log("AssemblyAI Account Info: " + response);
-                
-                if (resultText != null)
-                    resultText.text = "Press and hold T to record";
-                    
-                if (statusText != null)
-                    statusText.text = "Ready - Hold T to record";
-            }
-            else
-            {
-                string error = request.error;
-                Debug.LogError("AssemblyAI Error: " + error);
-                Debug.LogError("Response Code: " + request.responseCode);
-                
-                if (resultText != null)
-                    resultText.text = "Error: " + error + "\nCode: " + request.responseCode;
-                    
-                if (statusText != null)
-                    statusText.text = "Connection failed";
-            }
-        }
+        if (statusText != null)
+            statusText.text = "Ready - Hold T to record";
     }
     
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.T) && !isRecording && Microphone.devices.Length > 0)
+        if (Keyboard.current != null && !string.IsNullOrEmpty(microphoneDevice))
         {
-            StartRecording();
-        }
-        else if (Input.GetKeyUp(KeyCode.T) && isRecording)
-        {
-            StopRecording();
+            bool tPressed = Keyboard.current.tKey.isPressed;
+            
+            if (tPressed && !tKeyPressed && !isRecording && Microphone.devices.Length > 0)
+            {
+                StartRecording();
+            }
+            else if (!tPressed && tKeyPressed && isRecording)
+            {
+                StopRecording();
+            }
+            
+            tKeyPressed = tPressed;
         }
     }
     
     void StartRecording()
     {
+        if (isRecording) return;
+        
         Debug.Log("Starting recording...");
         isRecording = true;
         
         if (statusText != null)
             statusText.text = "Recording... Release T to stop";
         
-        recordedClip = Microphone.Start(microphoneDevice, false, maxRecordingLength, recordingFrequency);
+        try
+        {
+            recordedClip = Microphone.Start(microphoneDevice, false, maxRecordingLength, recordingFrequency);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Failed to start recording: " + e.Message);
+            isRecording = false;
+            if (statusText != null)
+                statusText.text = "Recording failed!";
+        }
     }
     
     void StopRecording()
     {
+        if (!isRecording) return;
+        
         Debug.Log("Stopping recording...");
         isRecording = false;
         
-        Microphone.End(microphoneDevice);
+        if (Microphone.IsRecording(microphoneDevice))
+        {
+            Microphone.End(microphoneDevice);
+        }
         
         if (statusText != null)
             statusText.text = "Processing recording...";
@@ -127,13 +155,34 @@ public class ApiCall : MonoBehaviour
         }
         
         float[] samples = new float[recordedClip.samples * recordedClip.channels];
-        recordedClip.GetData(samples, 0);
+        byte[] wavData = null;
         
-        byte[] wavData = ConvertToWAV(samples, recordedClip.channels, recordedClip.frequency);
+        try
+        {
+            recordedClip.GetData(samples, 0);
+            wavData = ConvertToWAV(samples, recordedClip.channels, recordedClip.frequency);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Failed to process recording: " + e.Message);
+            if (statusText != null)
+                statusText.text = "Processing failed!";
+            yield break;
+        }
+        finally
+        {
+            if (recordedClip != null)
+            {
+                Destroy(recordedClip);
+                recordedClip = null;
+            }
+        }
         
-        Debug.Log("Sending " + wavData.Length + " bytes to AssemblyAI");
-        
-        yield return StartCoroutine(SendToAssemblyAI(wavData));
+        if (wavData != null)
+        {
+            Debug.Log("Sending " + wavData.Length + " bytes to AssemblyAI");
+            yield return StartCoroutine(SendToAssemblyAI(wavData));
+        }
     }
     
     byte[] ConvertToWAV(float[] samples, int channels, int frequency)
