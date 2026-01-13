@@ -1,18 +1,32 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
+using System.Collections.Generic; // BELANGRIJK: Nodig voor List<>
 using System.IO;
 using TMPro;
 using UnityEngine.InputSystem;
 using System;
 using System.Net; 
 
+// DIT IS HET BLOKJE DAT JE STRAKS IN DE INSPECTOR ZIET
+[System.Serializable]
+public struct VoiceObject
+{
+    public string objectName;      // Naam voor jezelf (bijv. "Bank")
+    public string[] keywords;      // Woorden: "bank", "sofa", "couch"
+    public GameObject prefab;      // Sleep hier je ItHappy prefab in
+}
+
 public class ApiCall : MonoBehaviour
 {
-    // 🔥 BELANGRIJK: VERVANG DEZE KEY, DE OUDE IS NU ONLINE ZICHTBAAR VOOR IEDEREEN
-    private string apiKey = "c786b69a434f4bdb90be39b94ed56a14"; // <-- Maak zsm een nieuwe aan op AssemblyAI!
+    // 🔥 PAS OP: VRAAG EEN NIEUWE KEY AAN BIJ ASSEMBLYAI, DEZE IS GELEKT!
+    private string apiKey = "c786b69a434f4bdb90be39b94ed56a14"; 
     private string baseUrl = "https://api.assemblyai.com/v2"; 
     
+    // --- NIEUW: HIER KOMEN JE PREFABS IN TE STAAN ---
+    [Header("Mijn ItHappy Objecten")]
+    public List<VoiceObject> spawnableObjects; 
+
     [Header("UI References")]
     public TextMeshProUGUI resultText;
     public TextMeshProUGUI statusText;
@@ -25,15 +39,15 @@ public class ApiCall : MonoBehaviour
     private AudioClip recordedClip;
     private string microphoneDevice;
     private bool tKeyPressed = false;
-
     private int lastSamplePosition = 0;
     
     void Start()
     {
+        // Netwerk beveiliging fix voor Unity
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
         if (Microphone.devices.Length > 0)
         {
-            
             microphoneDevice = Microphone.devices[0];
             Debug.Log("Microfoon gevonden: " + microphoneDevice);
             UpdateStatus("Ready - Hold T to record");
@@ -67,20 +81,19 @@ public class ApiCall : MonoBehaviour
     {
         if (isRecording) return;
         isRecording = true;
+        lastSamplePosition = 0;
         UpdateStatus("Recording...");
         
         recordedClip = Microphone.Start(microphoneDevice, false, maxRecordingLength, recordingFrequency);
     }
     
-   void StopRecording()
+    void StopRecording()
     {
         if (!isRecording) return;
         isRecording = false;
         
-        // 1. Onthoud waar de microfoon was toen we stopten
         if (Microphone.IsRecording(microphoneDevice))
         {
-            // Dit geeft ons het aantal samples dat echt is opgenomen
             lastSamplePosition = Microphone.GetPosition(microphoneDevice);
             Microphone.End(microphoneDevice);
         }
@@ -91,67 +104,53 @@ public class ApiCall : MonoBehaviour
     
     IEnumerator ProcessRecording()
     {
-        yield return null; // Wacht 1 frame
+        yield return null; 
 
         if (recordedClip == null) yield break;
         
-        // VEILIGHEIDSCHECK: Als lastSamplePosition 0 is (te snel geklikt), pakken we alles
         if (lastSamplePosition <= 0) lastSamplePosition = recordedClip.samples;
 
-        // 1. Haal ALLE data op (dit moet in Unity)
+        // Audio trimmen (zodat het bestand klein blijft)
         float[] fullSamples = new float[recordedClip.samples * recordedClip.channels];
         recordedClip.GetData(fullSamples, 0);
         
-        // 2. Maak een nieuwe array die ALLEEN het opgenomen stukje bevat (TRIM)
-        // We vermenigvuldigen met channels (meestal 1) voor de zekerheid
         float[] trimmedSamples = new float[lastSamplePosition * recordedClip.channels];
-        
-        // Kopieer alleen het stuk dat we nodig hebben van 'full' naar 'trimmed'
-        System.Array.Copy(fullSamples, trimmedSamples, trimmedSamples.Length);
+        Array.Copy(fullSamples, trimmedSamples, trimmedSamples.Length);
 
-        Debug.Log($"Originele lengte: {fullSamples.Length}, Getrimde lengte: {trimmedSamples.Length}");
+        Debug.Log($"Audio getrimd: {fullSamples.Length} -> {trimmedSamples.Length}");
 
-        // 3. Converteren naar WAV bytes met de getrimde array
         byte[] audioData = ConvertToWAV(trimmedSamples, recordedClip.channels, recordedClip.frequency);
         
-        // 4. Opruimen
         Destroy(recordedClip);
         recordedClip = null;
         
-        // 5. Uploaden
         yield return StartCoroutine(SendToAssemblyAI(audioData));
     }
-   IEnumerator SendToAssemblyAI(byte[] audioData)
+
+    IEnumerator SendToAssemblyAI(byte[] audioData)
     {
         UpdateStatus("Uploading...");
-        Debug.Log($"Uploading {audioData.Length} bytes...");
-
-        if (audioData.Length == 0)
-        {
-            Debug.LogError("Audio data is leeg.");
-            yield break;
-        }
+        
+        if (audioData.Length == 0) yield break;
 
         string uploadEndpoint = baseUrl + "/upload";
         
-        // We maken het request object aan ZONDER 'using' statement om GC errors te vermijden
-        UnityWebRequest request = new UnityWebRequest(uploadEndpoint, "POST");
-        
-        // Setup
-        request.uploadHandler = new UploadHandlerRaw(audioData);
-        request.downloadHandler = new DownloadHandlerBuffer();
-        request.chunkedTransfer = false; 
-        request.SetRequestHeader("Authorization", apiKey.Trim());
-        request.SetRequestHeader("Connection", "close");
-
-        #if UNITY_EDITOR
-      
-        var certHandler = new BypassCertificate();
-        request.certificateHandler = certHandler;
-        #endif
-
-        try 
+        using (UnityWebRequest request = new UnityWebRequest(uploadEndpoint, "POST"))
         {
+            request.uploadHandler = new UploadHandlerRaw(audioData);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            
+            // Instellingen tegen Error 55
+            request.chunkedTransfer = false; 
+            request.SetRequestHeader("Authorization", apiKey.Trim());
+            request.SetRequestHeader("Content-Type", "application/octet-stream");
+            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36");
+            request.SetRequestHeader("Connection", "close");
+
+            #if UNITY_EDITOR
+            request.certificateHandler = new BypassCertificate();
+            #endif
+
             yield return request.SendWebRequest();
 
             if (request.result == UnityWebRequest.Result.Success)
@@ -162,16 +161,8 @@ public class ApiCall : MonoBehaviour
             }
             else
             {
-                Debug.LogError($"Upload Error: {request.error} | {request.downloadHandler.text}");
+                Debug.LogError($"Upload Error: {request.error}");
                 UpdateStatus($"Upload Failed: {request.error}");
-            }
-        }
-        finally
-        {
-            // Handmatig opruimen. Dit voorkomt vaak de "Invalid GC Handle" error
-            if (request != null)
-            {
-                request.Dispose();
             }
         }
     }
@@ -180,7 +171,8 @@ public class ApiCall : MonoBehaviour
     {
         UpdateStatus("Transcribing...");
         
-        string json = "{\"audio_url\": \"" + audioUrl + "\"}";
+        // Taal op Nederlands gezet (werkt beter voor nl spraak)
+        string json = "{\"audio_url\": \"" + audioUrl + "\", \"language_code\": \"nl\"}";
         string transcriptEndpoint = baseUrl + "/transcript";
         
         using (UnityWebRequest request = new UnityWebRequest(transcriptEndpoint, "POST"))
@@ -189,7 +181,7 @@ public class ApiCall : MonoBehaviour
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
             request.downloadHandler = new DownloadHandlerBuffer();
             
-            request.SetRequestHeader("Authorization", apiKey);
+            request.SetRequestHeader("Authorization", apiKey.Trim());
             request.SetRequestHeader("Content-Type", "application/json");
 
             #if UNITY_EDITOR
@@ -219,7 +211,7 @@ public class ApiCall : MonoBehaviour
         {
             using (UnityWebRequest request = UnityWebRequest.Get(pollUrl))
             {
-                request.SetRequestHeader("Authorization", apiKey);
+                request.SetRequestHeader("Authorization", apiKey.Trim());
                 
                 #if UNITY_EDITOR
                 request.certificateHandler = new BypassCertificate();
@@ -230,129 +222,111 @@ public class ApiCall : MonoBehaviour
                 if (request.result == UnityWebRequest.Result.Success)
                 {
                     var status = JsonUtility.FromJson<TranscriptStatus>(request.downloadHandler.text);
-                    
                     UpdateStatus("Status: " + status.status);
 
                     if (status.status == "completed")
                     {
                         if (resultText != null) resultText.text = status.text;
                         Debug.Log("Transcriptie compleet: " + status.text);
+                        
+                        // HIER STARTEN WE DE LOGICA
                         ProcessVoiceCommand(status.text);
                         break;
                     }
                     else if (status.status == "error")
                     {
                         UpdateStatus("Error: " + status.error);
-                        Debug.LogError("AssemblyAI Error: " + status.error);
                         break;
                     }
                 }
             }
-            yield return new WaitForSeconds(2);
+            yield return new WaitForSeconds(1f);
         }
     }
 
-   void ProcessVoiceCommand(string text)
+    // --- DE NIEUWE LOGICA VOOR JOUW LIJST ---
+    void ProcessVoiceCommand(string text)
     {
         string command = text.ToLower();
         Debug.Log("Commando analyseren: " + command);
 
-        // STAP 1: Bepaal de Kleur
-        // We scannen de zin eerst op kleuren. Standaard is wit.
-        Color objectColor = Color.white; 
+        // 1. Kleur bepalen
+        Color objectColor = Color.white;
+        bool colorFound = false;
         
-        if (command.Contains("rood") || command.Contains("red")) objectColor = Color.red;
-        else if (command.Contains("blauw") || command.Contains("blue")) objectColor = Color.blue;
-        else if (command.Contains("groen") || command.Contains("green")) objectColor = Color.green;
-        else if (command.Contains("geel") || command.Contains("yellow")) objectColor = Color.yellow;
-        else if (command.Contains("zwart") || command.Contains("black")) objectColor = Color.black;
+        if (command.Contains("rood") || command.Contains("red")) { objectColor = Color.red; colorFound = true; }
+        else if (command.Contains("blauw") || command.Contains("blue")) { objectColor = Color.blue; colorFound = true; }
+        else if (command.Contains("groen") || command.Contains("green")) { objectColor = Color.green; colorFound = true; }
+        else if (command.Contains("geel") || command.Contains("yellow")) { objectColor = Color.yellow; colorFound = true; }
+        else if (command.Contains("zwart") || command.Contains("black")) { objectColor = Color.black; colorFound = true; }
 
-        // STAP 2: Bepaal Fysica (Rigidbody)
-        // Standaard zetten we fysica AAN (vallen). 
-        // Als we woorden horen als "zweef", "float", "static", zetten we het UIT.
-        bool usePhysics = true;
+        // 2. Zoeken in jouw Inspector Lijst
+        bool itemFound = false;
 
-        if (command.Contains("zweef") || command.Contains("float") || 
-            command.Contains("statisch") || command.Contains("static") || 
-            command.Contains("vast"))
+        foreach (var item in spawnableObjects)
         {
-            usePhysics = false;
+            // Check alle keywords die jij bij dit object hebt gezet
+            foreach (string keyword in item.keywords)
+            {
+                if (command.Contains(keyword.ToLower()))
+                {
+                    SpawnItHappyObject(item.prefab, objectColor, colorFound);
+                    UpdateStatus($"Spawned: {item.objectName}");
+                    itemFound = true;
+                    return; // Stop met zoeken, we hebben hem!
+                }
+            }
         }
 
-        // STAP 3: Bepaal de Vorm en maak het object met de gekozen instellingen
-        if (command.Contains("box") || command.Contains("cube") || command.Contains("kubus") || command.Contains("vierkant"))
+        if (!itemFound)
         {
-            SpawnObject(PrimitiveType.Cube, objectColor, usePhysics);
-            UpdateStatus($"Maakte een {GetColorName(objectColor)} Kubus");
-        }
-        else if (command.Contains("sphere") || command.Contains("ball") || command.Contains("bal") || command.Contains("bol"))
-        {
-            SpawnObject(PrimitiveType.Sphere, objectColor, usePhysics);
-            UpdateStatus($"Maakte een {GetColorName(objectColor)} Bol");
-        }
-        else if (command.Contains("capsule") || command.Contains("pil"))
-        {
-            SpawnObject(PrimitiveType.Capsule, objectColor, usePhysics);
-            UpdateStatus($"Maakte een {GetColorName(objectColor)} Capsule");
-        }
-        else
-        {
-            UpdateStatus("Geen vorm herkend, probeer: 'Rode kubus' of 'Zwevende bal'");
+            UpdateStatus("Object niet herkend. Staat het in de lijst?");
         }
     }
 
-    // De functie accepteert nu extra parameters: kleur en fysica
-    void SpawnObject(PrimitiveType type, Color color, bool usePhysics)
+    void SpawnItHappyObject(GameObject prefab, Color color, bool applyColor)
     {
-        GameObject obj = GameObject.CreatePrimitive(type);
+        if (prefab == null) return;
+
+        // Maak object aan
+        GameObject obj = Instantiate(prefab);
         
-        // 1. Positie instellen (voor de camera)
+        // Zet positie (voor camera)
         if (Camera.main != null)
         {
             Transform cam = Camera.main.transform;
-            obj.transform.position = cam.position + (cam.forward * 2f);
-            obj.transform.rotation = cam.rotation;
+            // Zet 2 meter voor de camera
+            Vector3 spawnPos = cam.position + (cam.forward * 2f);
+            
+            // Zorg dat hij niet in de lucht zweeft als je naar boven kijkt (reset Y naar vloer niveau indien gewenst)
+            // Maar voor nu zetten we hem gewoon voor je neus:
+            obj.transform.position = spawnPos; 
+            
+            // Draai object naar jou toe
+            obj.transform.LookAt(new Vector3(cam.position.x, obj.transform.position.y, cam.position.z));
         }
         else
         {
-            obj.transform.position = new Vector3(0, 2f, 2f);
-        }
-        
-        // 2. Kleur toepassen
-        // We halen de Renderer op en passen de material kleur aan
-        var renderer = obj.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            renderer.material.color = color;
+            obj.transform.position = new Vector3(0, 0, 2f);
         }
 
-        // 3. Fysica toepassen (alleen als usePhysics true is)
-        if (usePhysics)
-        {
-            Rigidbody rb = obj.AddComponent<Rigidbody>();
-            rb.mass = 1.0f; // Standaard gewicht
-        }
+        // Fysica toevoegen
+        if (obj.GetComponent<Rigidbody>() == null) obj.AddComponent<Rigidbody>();
         
-        // Grootte aanpassen
-        obj.transform.localScale = Vector3.one * 0.5f; 
+        // Kleur toepassen op ItHappy prefabs (die hebben vaak meerdere onderdelen)
+        if (applyColor)
+        {
+            Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+            foreach (Renderer r in renderers)
+            {
+                r.material.color = color;
+            }
+        }
     }
 
-    // Een klein hulpje om de naam van de kleur te printen in de UI
-    string GetColorName(Color c)
-    {
-        if (c == Color.red) return "Rode";
-        if (c == Color.blue) return "Blauwe";
-        if (c == Color.green) return "Groene";
-        if (c == Color.yellow) return "Gele";
-        if (c == Color.black) return "Zwarte";
-        return "Witte";
-    }
     void UpdateStatus(string msg)
     {
-        if (statusText != null) 
-        {
-            statusText.text = msg;
-        }
+        if (statusText != null) statusText.text = msg;
     }
 
     byte[] ConvertToWAV(float[] samples, int channels, int frequency)
@@ -374,22 +348,16 @@ public class ApiCall : MonoBehaviour
             writer.Write("data".ToCharArray());
             writer.Write(samples.Length * 2);
 
-            foreach (var sample in samples)
-            {
-                writer.Write((short)(sample * short.MaxValue));
-            }
+            foreach (var sample in samples) writer.Write((short)(sample * short.MaxValue));
             return stream.ToArray();
         }
     }
 }
 
 // JSON HELPERS
-[System.Serializable]
-public class UploadResponse { public string upload_url; }
-[System.Serializable]
-public class TranscriptResponse { public string id; }
-[System.Serializable]
-public class TranscriptStatus { public string status; public string text; public string error; }
+[System.Serializable] public class UploadResponse { public string upload_url; }
+[System.Serializable] public class TranscriptResponse { public string id; }
+[System.Serializable] public class TranscriptStatus { public string status; public string text; public string error; }
 
 #if UNITY_EDITOR
 public class BypassCertificate : CertificateHandler
