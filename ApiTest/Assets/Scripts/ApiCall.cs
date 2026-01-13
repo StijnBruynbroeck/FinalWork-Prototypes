@@ -237,6 +237,7 @@ public class ApiCall : MonoBehaviour
                     {
                         if (resultText != null) resultText.text = status.text;
                         Debug.Log("Transcriptie compleet: " + status.text);
+                        ProcessVoiceCommand(status.text);
                         break;
                     }
                     else if (status.status == "error")
@@ -251,8 +252,101 @@ public class ApiCall : MonoBehaviour
         }
     }
 
-    // --- DE ONTBREKENDE FUNCTIE ---
-    // Dit is de functie die "missing" was in jouw vorige code
+   void ProcessVoiceCommand(string text)
+    {
+        string command = text.ToLower();
+        Debug.Log("Commando analyseren: " + command);
+
+        // STAP 1: Bepaal de Kleur
+        // We scannen de zin eerst op kleuren. Standaard is wit.
+        Color objectColor = Color.white; 
+        
+        if (command.Contains("rood") || command.Contains("red")) objectColor = Color.red;
+        else if (command.Contains("blauw") || command.Contains("blue")) objectColor = Color.blue;
+        else if (command.Contains("groen") || command.Contains("green")) objectColor = Color.green;
+        else if (command.Contains("geel") || command.Contains("yellow")) objectColor = Color.yellow;
+        else if (command.Contains("zwart") || command.Contains("black")) objectColor = Color.black;
+
+        // STAP 2: Bepaal Fysica (Rigidbody)
+        // Standaard zetten we fysica AAN (vallen). 
+        // Als we woorden horen als "zweef", "float", "static", zetten we het UIT.
+        bool usePhysics = true;
+
+        if (command.Contains("zweef") || command.Contains("float") || 
+            command.Contains("statisch") || command.Contains("static") || 
+            command.Contains("vast"))
+        {
+            usePhysics = false;
+        }
+
+        // STAP 3: Bepaal de Vorm en maak het object met de gekozen instellingen
+        if (command.Contains("box") || command.Contains("cube") || command.Contains("kubus") || command.Contains("vierkant"))
+        {
+            SpawnObject(PrimitiveType.Cube, objectColor, usePhysics);
+            UpdateStatus($"Maakte een {GetColorName(objectColor)} Kubus");
+        }
+        else if (command.Contains("sphere") || command.Contains("ball") || command.Contains("bal") || command.Contains("bol"))
+        {
+            SpawnObject(PrimitiveType.Sphere, objectColor, usePhysics);
+            UpdateStatus($"Maakte een {GetColorName(objectColor)} Bol");
+        }
+        else if (command.Contains("capsule") || command.Contains("pil"))
+        {
+            SpawnObject(PrimitiveType.Capsule, objectColor, usePhysics);
+            UpdateStatus($"Maakte een {GetColorName(objectColor)} Capsule");
+        }
+        else
+        {
+            UpdateStatus("Geen vorm herkend, probeer: 'Rode kubus' of 'Zwevende bal'");
+        }
+    }
+
+    // De functie accepteert nu extra parameters: kleur en fysica
+    void SpawnObject(PrimitiveType type, Color color, bool usePhysics)
+    {
+        GameObject obj = GameObject.CreatePrimitive(type);
+        
+        // 1. Positie instellen (voor de camera)
+        if (Camera.main != null)
+        {
+            Transform cam = Camera.main.transform;
+            obj.transform.position = cam.position + (cam.forward * 2f);
+            obj.transform.rotation = cam.rotation;
+        }
+        else
+        {
+            obj.transform.position = new Vector3(0, 2f, 2f);
+        }
+        
+        // 2. Kleur toepassen
+        // We halen de Renderer op en passen de material kleur aan
+        var renderer = obj.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.material.color = color;
+        }
+
+        // 3. Fysica toepassen (alleen als usePhysics true is)
+        if (usePhysics)
+        {
+            Rigidbody rb = obj.AddComponent<Rigidbody>();
+            rb.mass = 1.0f; // Standaard gewicht
+        }
+        
+        // Grootte aanpassen
+        obj.transform.localScale = Vector3.one * 0.5f; 
+    }
+
+    // Een klein hulpje om de naam van de kleur te printen in de UI
+    string GetColorName(Color c)
+    {
+        if (c == Color.red) return "Rode";
+        if (c == Color.blue) return "Blauwe";
+        if (c == Color.green) return "Groene";
+        if (c == Color.yellow) return "Gele";
+        if (c == Color.black) return "Zwarte";
+        return "Witte";
+    }
     void UpdateStatus(string msg)
     {
         if (statusText != null) 
