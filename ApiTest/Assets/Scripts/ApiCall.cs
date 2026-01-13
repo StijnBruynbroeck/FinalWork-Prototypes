@@ -25,6 +25,8 @@ public class ApiCall : MonoBehaviour
     private AudioClip recordedClip;
     private string microphoneDevice;
     private bool tKeyPressed = false;
+
+    private int lastSamplePosition = 0;
     
     void Start()
     {
@@ -70,13 +72,16 @@ public class ApiCall : MonoBehaviour
         recordedClip = Microphone.Start(microphoneDevice, false, maxRecordingLength, recordingFrequency);
     }
     
-    void StopRecording()
+   void StopRecording()
     {
         if (!isRecording) return;
         isRecording = false;
         
+        // 1. Onthoud waar de microfoon was toen we stopten
         if (Microphone.IsRecording(microphoneDevice))
         {
+            // Dit geeft ons het aantal samples dat echt is opgenomen
+            lastSamplePosition = Microphone.GetPosition(microphoneDevice);
             Microphone.End(microphoneDevice);
         }
         
@@ -86,21 +91,36 @@ public class ApiCall : MonoBehaviour
     
     IEnumerator ProcessRecording()
     {
-        yield return new WaitForSeconds(0.1f);
+        yield return null; // Wacht 1 frame
 
         if (recordedClip == null) yield break;
         
-        float[] samples = new float[recordedClip.samples * recordedClip.channels];
-        recordedClip.GetData(samples, 0);
+        // VEILIGHEIDSCHECK: Als lastSamplePosition 0 is (te snel geklikt), pakken we alles
+        if (lastSamplePosition <= 0) lastSamplePosition = recordedClip.samples;
+
+        // 1. Haal ALLE data op (dit moet in Unity)
+        float[] fullSamples = new float[recordedClip.samples * recordedClip.channels];
+        recordedClip.GetData(fullSamples, 0);
         
-        byte[] audioData = ConvertToWAV(samples, recordedClip.channels, recordedClip.frequency);
+        // 2. Maak een nieuwe array die ALLEEN het opgenomen stukje bevat (TRIM)
+        // We vermenigvuldigen met channels (meestal 1) voor de zekerheid
+        float[] trimmedSamples = new float[lastSamplePosition * recordedClip.channels];
         
+        // Kopieer alleen het stuk dat we nodig hebben van 'full' naar 'trimmed'
+        System.Array.Copy(fullSamples, trimmedSamples, trimmedSamples.Length);
+
+        Debug.Log($"Originele lengte: {fullSamples.Length}, Getrimde lengte: {trimmedSamples.Length}");
+
+        // 3. Converteren naar WAV bytes met de getrimde array
+        byte[] audioData = ConvertToWAV(trimmedSamples, recordedClip.channels, recordedClip.frequency);
+        
+        // 4. Opruimen
         Destroy(recordedClip);
         recordedClip = null;
         
+        // 5. Uploaden
         yield return StartCoroutine(SendToAssemblyAI(audioData));
     }
-
    IEnumerator SendToAssemblyAI(byte[] audioData)
     {
         UpdateStatus("Uploading...");
@@ -122,15 +142,14 @@ public class ApiCall : MonoBehaviour
         request.downloadHandler = new DownloadHandlerBuffer();
         request.chunkedTransfer = false; 
         request.SetRequestHeader("Authorization", apiKey.Trim());
-        request.SetRequestHeader("Content-Type", "application/octet-stream");
+        request.SetRequestHeader("Connection", "close");
 
         #if UNITY_EDITOR
-        // We slaan de certificaat handler op in een variabele
+      
         var certHandler = new BypassCertificate();
         request.certificateHandler = certHandler;
         #endif
 
-        // We gebruiken een try/finally blok om zeker te weten dat we netjes opruimen
         try 
         {
             yield return request.SendWebRequest();
