@@ -1,17 +1,17 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System;
 using TMPro;
 using UnityEngine.InputSystem;
-using System.Security.Cryptography.X509Certificates;
+using System;
+using System.Net; 
 
 public class ApiCall : MonoBehaviour
 {
-    private string apiKey = "eb3b47c9928a4faba73a6a2500b97bd5";
-    private string baseUrl = "https://api.assemblyai.com";
+    // 🔥 BELANGRIJK: VERVANG DEZE KEY, DE OUDE IS NU ONLINE ZICHTBAAR VOOR IEDEREEN
+    private string apiKey = "c786b69a434f4bdb90be39b94ed56a14"; // <-- Maak zsm een nieuwe aan op AssemblyAI!
+    private string baseUrl = "https://api.assemblyai.com/v2"; 
     
     [Header("UI References")]
     public TextMeshProUGUI resultText;
@@ -28,59 +28,19 @@ public class ApiCall : MonoBehaviour
     
     void Start()
     {
-        StartCoroutine(TestAssemblyAIConnection());
-        
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         if (Microphone.devices.Length > 0)
         {
+            
             microphoneDevice = Microphone.devices[0];
-            Debug.Log("Using microphone: " + microphoneDevice);
+            Debug.Log("Microfoon gevonden: " + microphoneDevice);
+            UpdateStatus("Ready - Hold T to record");
         }
         else
         {
-            Debug.LogError("No microphone found!");
-        if (statusText != null)
-            statusText.text = "No microphone found!";
+            Debug.LogError("Geen microfoon gevonden!");
+            UpdateStatus("No microphone found!");
         }
-    }
-    
-    void OnDestroy()
-    {
-        StopRecording();
-        
-        if (recordedClip != null)
-        {
-            Destroy(recordedClip);
-            recordedClip = null;
-        }
-    }
-    
-    void OnApplicationQuit()
-    {
-        StopRecording();
-        
-        if (recordedClip != null)
-        {
-            Destroy(recordedClip);
-            recordedClip = null;
-        }
-    }
-    
-    IEnumerator TestAssemblyAIConnection()
-    {
-        if (statusText != null)
-            statusText.text = "Testing AssemblyAI connection...";
-        
-        // Remove the account test since /account endpoint doesn't exist
-        // Instead just show ready message
-        yield return new WaitForSeconds(0.5f);
-        
-        Debug.Log("AssemblyAI API Key configured");
-        
-        if (resultText != null)
-            resultText.text = "Press and hold T to record";
-            
-        if (statusText != null)
-            statusText.text = "Ready - Hold T to record";
     }
     
     void Update()
@@ -89,7 +49,7 @@ public class ApiCall : MonoBehaviour
         {
             bool tPressed = Keyboard.current.tKey.isPressed;
             
-            if (tPressed && !tKeyPressed && !isRecording && Microphone.devices.Length > 0)
+            if (tPressed && !tKeyPressed && !isRecording)
             {
                 StartRecording();
             }
@@ -97,7 +57,6 @@ public class ApiCall : MonoBehaviour
             {
                 StopRecording();
             }
-            
             tKeyPressed = tPressed;
         }
     }
@@ -105,31 +64,15 @@ public class ApiCall : MonoBehaviour
     void StartRecording()
     {
         if (isRecording) return;
-        
-        Debug.Log("Starting recording...");
         isRecording = true;
+        UpdateStatus("Recording...");
         
-        if (statusText != null)
-            statusText.text = "Recording... Release T to stop";
-        
-        try
-        {
-            recordedClip = Microphone.Start(microphoneDevice, false, maxRecordingLength, recordingFrequency);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError("Failed to start recording: " + e.Message);
-            isRecording = false;
-            if (statusText != null)
-                statusText.text = "Recording failed!";
-        }
+        recordedClip = Microphone.Start(microphoneDevice, false, maxRecordingLength, recordingFrequency);
     }
     
     void StopRecording()
     {
         if (!isRecording) return;
-        
-        Debug.Log("Stopping recording...");
         isRecording = false;
         
         if (Microphone.IsRecording(microphoneDevice))
@@ -137,73 +80,175 @@ public class ApiCall : MonoBehaviour
             Microphone.End(microphoneDevice);
         }
         
-        if (statusText != null)
-            statusText.text = "Processing recording...";
-        
+        UpdateStatus("Processing...");
         StartCoroutine(ProcessRecording());
     }
     
     IEnumerator ProcessRecording()
     {
         yield return new WaitForSeconds(0.1f);
-        
-        if (recordedClip == null)
-        {
-            Debug.LogError("No audio recorded!");
-            if (statusText != null)
-                statusText.text = "Recording failed!";
-            yield break;
-        }
+
+        if (recordedClip == null) yield break;
         
         float[] samples = new float[recordedClip.samples * recordedClip.channels];
-        byte[] wavData = null;
+        recordedClip.GetData(samples, 0);
         
-        try
+        byte[] audioData = ConvertToWAV(samples, recordedClip.channels, recordedClip.frequency);
+        
+        Destroy(recordedClip);
+        recordedClip = null;
+        
+        yield return StartCoroutine(SendToAssemblyAI(audioData));
+    }
+
+   IEnumerator SendToAssemblyAI(byte[] audioData)
+    {
+        UpdateStatus("Uploading...");
+        Debug.Log($"Uploading {audioData.Length} bytes...");
+
+        if (audioData.Length == 0)
         {
-            recordedClip.GetData(samples, 0);
-            wavData = ConvertToWAV(samples, recordedClip.channels, recordedClip.frequency);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError("Failed to process recording: " + e.Message);
-            if (statusText != null)
-                statusText.text = "Processing failed!";
+            Debug.LogError("Audio data is leeg.");
             yield break;
+        }
+
+        string uploadEndpoint = baseUrl + "/upload";
+        
+        // We maken het request object aan ZONDER 'using' statement om GC errors te vermijden
+        UnityWebRequest request = new UnityWebRequest(uploadEndpoint, "POST");
+        
+        // Setup
+        request.uploadHandler = new UploadHandlerRaw(audioData);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.chunkedTransfer = false; 
+        request.SetRequestHeader("Authorization", apiKey.Trim());
+        request.SetRequestHeader("Content-Type", "application/octet-stream");
+
+        #if UNITY_EDITOR
+        // We slaan de certificaat handler op in een variabele
+        var certHandler = new BypassCertificate();
+        request.certificateHandler = certHandler;
+        #endif
+
+        // We gebruiken een try/finally blok om zeker te weten dat we netjes opruimen
+        try 
+        {
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                var response = JsonUtility.FromJson<UploadResponse>(request.downloadHandler.text);
+                Debug.Log("Upload gelukt! URL: " + response.upload_url);
+                yield return StartCoroutine(StartTranscription(response.upload_url));
+            }
+            else
+            {
+                Debug.LogError($"Upload Error: {request.error} | {request.downloadHandler.text}");
+                UpdateStatus($"Upload Failed: {request.error}");
+            }
         }
         finally
         {
-            if (recordedClip != null)
+            // Handmatig opruimen. Dit voorkomt vaak de "Invalid GC Handle" error
+            if (request != null)
             {
-                Destroy(recordedClip);
-                recordedClip = null;
+                request.Dispose();
             }
         }
+    }
+
+    IEnumerator StartTranscription(string audioUrl)
+    {
+        UpdateStatus("Transcribing...");
         
-        if (wavData != null)
+        string json = "{\"audio_url\": \"" + audioUrl + "\"}";
+        string transcriptEndpoint = baseUrl + "/transcript";
+        
+        using (UnityWebRequest request = new UnityWebRequest(transcriptEndpoint, "POST"))
         {
-            Debug.Log("Sending " + wavData.Length + " bytes to AssemblyAI");
-            yield return StartCoroutine(SendToAssemblyAI(wavData));
+            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            
+            request.SetRequestHeader("Authorization", apiKey);
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            #if UNITY_EDITOR
+            request.certificateHandler = new BypassCertificate();
+            #endif
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                string id = JsonUtility.FromJson<TranscriptResponse>(request.downloadHandler.text).id;
+                yield return StartCoroutine(CheckTranscriptionStatus(id));
+            }
+            else
+            {
+                Debug.LogError("Transcript Start Fout: " + request.error);
+                UpdateStatus("Transcript Error");
+            }
         }
     }
-    
+
+    IEnumerator CheckTranscriptionStatus(string id)
+    {
+        string pollUrl = baseUrl + "/transcript/" + id;
+        
+        while (true)
+        {
+            using (UnityWebRequest request = UnityWebRequest.Get(pollUrl))
+            {
+                request.SetRequestHeader("Authorization", apiKey);
+                
+                #if UNITY_EDITOR
+                request.certificateHandler = new BypassCertificate();
+                #endif
+
+                yield return request.SendWebRequest();
+
+                if (request.result == UnityWebRequest.Result.Success)
+                {
+                    var status = JsonUtility.FromJson<TranscriptStatus>(request.downloadHandler.text);
+                    
+                    UpdateStatus("Status: " + status.status);
+
+                    if (status.status == "completed")
+                    {
+                        if (resultText != null) resultText.text = status.text;
+                        Debug.Log("Transcriptie compleet: " + status.text);
+                        break;
+                    }
+                    else if (status.status == "error")
+                    {
+                        UpdateStatus("Error: " + status.error);
+                        Debug.LogError("AssemblyAI Error: " + status.error);
+                        break;
+                    }
+                }
+            }
+            yield return new WaitForSeconds(2);
+        }
+    }
+
+    // --- DE ONTBREKENDE FUNCTIE ---
+    // Dit is de functie die "missing" was in jouw vorige code
+    void UpdateStatus(string msg)
+    {
+        if (statusText != null) 
+        {
+            statusText.text = msg;
+        }
+    }
+
     byte[] ConvertToWAV(float[] samples, int channels, int frequency)
     {
         using (MemoryStream stream = new MemoryStream())
         using (BinaryWriter writer = new BinaryWriter(stream))
         {
-            int sampleCount = samples.Length;
-            short[] intSamples = new short[sampleCount];
-            
-            for (int i = 0; i < sampleCount; i++)
-            {
-                intSamples[i] = (short)(samples[i] * short.MaxValue);
-            }
-            
-            byte[] idata = new byte[sampleCount * 2];
-            Buffer.BlockCopy(intSamples, 0, idata, 0, idata.Length);
-            
             writer.Write("RIFF".ToCharArray());
-            writer.Write(36 + idata.Length);
+            writer.Write(36 + samples.Length * 2);
             writer.Write("WAVE".ToCharArray());
             writer.Write("fmt ".ToCharArray());
             writer.Write(16);
@@ -214,278 +259,31 @@ public class ApiCall : MonoBehaviour
             writer.Write((short)(channels * 2));
             writer.Write((short)16);
             writer.Write("data".ToCharArray());
-            writer.Write(idata.Length);
-            writer.Write(idata);
-            
+            writer.Write(samples.Length * 2);
+
+            foreach (var sample in samples)
+            {
+                writer.Write((short)(sample * short.MaxValue));
+            }
             return stream.ToArray();
         }
     }
-    
-    IEnumerator SendToAssemblyAI(byte[] wavData)
-    {
-        if (statusText != null)
-            statusText.text = "Uploading to AssemblyAI...";
-        
-        List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
-        formData.Add(new MultipartFormDataSection("audio", wavData, "audio/wav"));
-        
-        using (UnityWebRequest request = UnityWebRequest.Post(baseUrl + "/upload", formData))
-        {
-            request.SetRequestHeader("Authorization", apiKey);
-            request.timeout = 30; // Set timeout to 30 seconds
-            
-            // Handle certificate bypass for development (remove in production)
-            #if UNITY_EDITOR
-            request.certificateHandler = new BypassCertificate();
-            #endif
-            
-            yield return request.SendWebRequest();
-            
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                string uploadResponse = request.downloadHandler.text;
-                Debug.Log("Upload Response: " + uploadResponse);
-                
-                string uploadUrl = "";
-                try
-                {
-                    uploadUrl = JsonUtility.FromJson<UploadResponse>(uploadResponse).upload_url;
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError("Failed to parse upload response: " + e.Message);
-                    if (statusText != null)
-                        statusText.text = "Upload response error";
-                    yield break;
-                }
-                
-                yield return StartCoroutine(StartTranscription(uploadUrl));
-            }
-            else
-            {
-                string errorMsg = request.error;
-                if (request.responseCode == 0 && errorMsg.Contains("unitytls"))
-                {
-                    errorMsg = "TLS/SSL Certificate Error - Check network connection";
-                }
-                
-                Debug.LogError("Upload Error: " + errorMsg);
-                Debug.LogError("Response Code: " + request.responseCode);
-                Debug.LogError("Response Body: " + request.downloadHandler.text);
-                
-                if (statusText != null)
-                    statusText.text = "Upload failed: " + errorMsg;
-            }
-        }
-    }
-    
-    public void UploadAudioForTranscription(string audioFilePath)
-    {
-        StartCoroutine(UploadAndTranscribe(audioFilePath));
-    }
-    
-    IEnumerator UploadAndTranscribe(string audioFilePath)
-    {
-        if (statusText != null)
-            statusText.text = "Uploading audio file...";
-        
-        byte[] audioData = System.IO.File.ReadAllBytes(audioFilePath);
-        
-        List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
-        formData.Add(new MultipartFormDataSection("audio", audioData, "audio/wav"));
-        
-        using (UnityWebRequest request = UnityWebRequest.Post(baseUrl + "/upload", formData))
-        {
-            request.SetRequestHeader("Authorization", apiKey);
-            
-            yield return request.SendWebRequest();
-            
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                string uploadResponse = request.downloadHandler.text;
-                Debug.Log("Upload Response: " + uploadResponse);
-                
-                string uploadUrl = JsonUtility.FromJson<UploadResponse>(uploadResponse).upload_url;
-                yield return StartCoroutine(StartTranscription(uploadUrl));
-            }
-            else
-            {
-                Debug.LogError("Upload Error: " + request.error);
-                if (statusText != null)
-                    statusText.text = "Upload failed: " + request.error;
-            }
-        }
-    }
-    
-    IEnumerator StartTranscription(string audioUrl)
-    {
-        if (statusText != null)
-            statusText.text = "Starting transcription...";
-        
-        string jsonData = "{\"audio_url\": \"" + audioUrl + "\"}";
-        
-        using (UnityWebRequest request = UnityWebRequest.Post(baseUrl + "/transcript", jsonData, "application/json"))
-        {
-            request.SetRequestHeader("Authorization", apiKey);
-            request.timeout = 30;
-            
-            #if UNITY_EDITOR
-            request.certificateHandler = new BypassCertificate();
-            #endif
-            
-            yield return request.SendWebRequest();
-            
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                string transcriptResponse = request.downloadHandler.text;
-                Debug.Log("Transcript Response: " + transcriptResponse);
-                
-                string transcriptId = "";
-                try
-                {
-                    transcriptId = JsonUtility.FromJson<TranscriptResponse>(transcriptResponse).id;
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError("Failed to parse transcript response: " + e.Message);
-                    if (statusText != null)
-                        statusText.text = "Transcription response error";
-                    yield break;
-                }
-                
-                yield return StartCoroutine(CheckTranscriptionStatus(transcriptId));
-            }
-            else
-            {
-                string errorMsg = request.error;
-                if (request.responseCode == 0 && errorMsg.Contains("unitytls"))
-                {
-                    errorMsg = "TLS/SSL Certificate Error during transcription";
-                }
-                
-                Debug.LogError("Transcription Error: " + errorMsg);
-                Debug.LogError("Response Code: " + request.responseCode);
-                Debug.LogError("Response Body: " + request.downloadHandler.text);
-                
-                if (statusText != null)
-                    statusText.text = "Transcription failed: " + errorMsg;
-            }
-        }
-    }
-    
-    IEnumerator CheckTranscriptionStatus(string transcriptId)
-    {
-        string pollUrl = baseUrl + "/transcript/" + transcriptId;
-        int maxAttempts = 30; // Maximum 60 seconds (30 * 2 seconds)
-        int attempts = 0;
-        
-        while (attempts < maxAttempts)
-        {
-            using (UnityWebRequest request = UnityWebRequest.Get(pollUrl))
-            {
-                request.SetRequestHeader("Authorization", apiKey);
-                request.timeout = 10;
-                
-                #if UNITY_EDITOR
-                request.certificateHandler = new BypassCertificate();
-                #endif
-                
-                yield return request.SendWebRequest();
-                
-                if (request.result == UnityWebRequest.Result.Success)
-                {
-                    string response = request.downloadHandler.text;
-                    TranscriptStatus status = null;
-                    
-                    try
-                    {
-                        status = JsonUtility.FromJson<TranscriptStatus>(response);
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogError("Failed to parse status response: " + e.Message);
-                        attempts++;
-                    }
-                    
-                    if (status == null)
-                    {
-                        yield return new WaitForSeconds(2f);
-                        continue;
-                    }
-                    
-                    Debug.Log("Transcription Status: " + status.status);
-                    
-                    if (statusText != null)
-                        statusText.text = "Status: " + status.status;
-                    
-                    if (status.status == "completed")
-                    {
-                        if (resultText != null)
-                            resultText.text = "Transcription Complete:\n" + status.text;
-                        yield break;
-                    }
-                    else if (status.status == "error")
-                    {
-                        Debug.LogError("Transcription Error: " + status.error);
-                        if (resultText != null)
-                            resultText.text = "Transcription Error: " + status.error;
-                        yield break;
-                    }
-                }
-                else
-                {
-                    Debug.LogError("Status Check Error: " + request.error);
-                    Debug.LogError("Response Code: " + request.responseCode);
-                    attempts++;
-                    
-                    if (attempts >= maxAttempts)
-                    {
-                        if (statusText != null)
-                            statusText.text = "Status check failed - Max attempts reached";
-                        yield break;
-                    }
-                    
-                    yield return new WaitForSeconds(2f);
-                    continue;
-                }
-            }
-            
-            attempts++;
-            yield return new WaitForSeconds(2f);
-        }
-        
-        if (statusText != null)
-            statusText.text = "Transcription timeout";
-    }
 }
 
+// JSON HELPERS
 [System.Serializable]
-public class UploadResponse
-{
-    public string upload_url;
-}
-
+public class UploadResponse { public string upload_url; }
 [System.Serializable]
-public class TranscriptResponse
-{
-    public string id;
-}
-
+public class TranscriptResponse { public string id; }
 [System.Serializable]
-public class TranscriptStatus
-{
-    public string id;
-    public string status;
-    public string text;
-    public string error;
-}
+public class TranscriptStatus { public string status; public string text; public string error; }
 
 #if UNITY_EDITOR
 public class BypassCertificate : CertificateHandler
 {
     protected override bool ValidateCertificate(byte[] certificateData)
     {
-        return true; // Bypass certificate validation in editor for testing
+        return true;
     }
 }
 #endif
