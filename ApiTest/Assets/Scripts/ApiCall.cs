@@ -20,7 +20,7 @@ public struct VoiceObject
 public class ApiCall : MonoBehaviour
 {
     // 🔥 PAS OP: VRAAG EEN NIEUWE KEY AAN BIJ ASSEMBLYAI, DEZE IS GELEKT!
-    private string apiKey = "c786b69a434f4bdb90be39b94ed56a14"; 
+    private string apiKey = "fe0d18f4e26d4d44be37680f7e88e7d4"; 
     private string baseUrl = "https://api.assemblyai.com/v2"; 
     
     // --- NIEUW: HIER KOMEN JE PREFABS IN TE STAAN ---
@@ -106,24 +106,46 @@ public class ApiCall : MonoBehaviour
     {
         yield return null; 
 
-        if (recordedClip == null) yield break;
+        // CHECK 1: Is er überhaupt een clip?
+        if (recordedClip == null)
+        {
+            Debug.LogError("Fout: recordedClip is null!");
+            UpdateStatus("Error: Mic failed (null)");
+            yield break;
+        }
         
-        if (lastSamplePosition <= 0) lastSamplePosition = recordedClip.samples;
+        // CHECK 2: Hebben we samples?
+        if (lastSamplePosition <= 0)
+        {
+            // Soms geeft GetPosition 0 terug als je héél snel klikt. We pakken dan alles.
+            lastSamplePosition = recordedClip.samples;
+        }
 
-        // Audio trimmen (zodat het bestand klein blijft)
+        if (lastSamplePosition == 0)
+        {
+             Debug.LogError("Fout: Geen audio samples gevonden (0).");
+             UpdateStatus("Error: No audio heard");
+             yield break;
+        }
+
+        Debug.Log($"Processing audio... Samples: {lastSamplePosition}");
+
+        // Audio data ophalen
         float[] fullSamples = new float[recordedClip.samples * recordedClip.channels];
         recordedClip.GetData(fullSamples, 0);
         
+        // Trimmen
         float[] trimmedSamples = new float[lastSamplePosition * recordedClip.channels];
         Array.Copy(fullSamples, trimmedSamples, trimmedSamples.Length);
 
-        Debug.Log($"Audio getrimd: {fullSamples.Length} -> {trimmedSamples.Length}");
-
+        // Converteren
         byte[] audioData = ConvertToWAV(trimmedSamples, recordedClip.channels, recordedClip.frequency);
         
+        // Opruimen
         Destroy(recordedClip);
         recordedClip = null;
         
+        // Uploaden starten
         yield return StartCoroutine(SendToAssemblyAI(audioData));
     }
 
