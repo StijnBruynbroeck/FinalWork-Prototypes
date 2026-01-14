@@ -290,6 +290,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 049d1190dcf609f4a9c1cc6f8c8bc598, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ApiCall
+  spawnableObjects:
+  - objectName: Deur
+    keywords:
+    - Deur
+    - Door
+    prefab: {fileID: 7826058823715770052, guid: 29da025a34eaa5d4eabe6fac544b245d, type: 3}
+  - objectName: Stoel
+    keywords:
+    - Chair
+    - Seat
+    - Stoel
+    - Stool
+    prefab: {fileID: 4237530767371831047, guid: 4c4b2b0935db72a45a61b3a6e86d95bf, type: 3}
+  - objectName: TV
+    keywords:
+    - TV
+    - Television
+    - 
+    - TV wall
+    prefab: {fileID: 2216539992114824954, guid: c97a7e3361d4a884ea66a7f03258cdc8, type: 3}
+  - objectName: Washing machine
+    keywords:
+    - Washing machine
+    prefab: {fileID: 6075769524634383316, guid: 2343b3a108edf9a49b06659f0928a030, type: 3}
+  - objectName: Washing machine
+    keywords:
+    - Washing machine
+    prefab: {fileID: 6075769524634383316, guid: 2343b3a108edf9a49b06659f0928a030, type: 3}
   resultText: {fileID: 1659766596}
   statusText: {fileID: 864888829}
   recordingFrequency: 44100
