@@ -108,4 +108,18 @@ public class MicrophoneRecorder : MonoBehaviour
             return stream.ToArray();
         }
     }
+
+    void OnDisable()
+    {
+        // Deze functie wordt automatisch door Unity aangeroepen als je op 'Stop' klikt
+        if (isRecording && microphoneDevice != null)
+        {
+            if (Microphone.IsRecording(microphoneDevice))
+            {
+                Microphone.End(microphoneDevice);
+                Debug.Log("Microfoon netjes afgesloten door OnDisable.");
+            }
+            isRecording = false;
+        }
+    }
 }

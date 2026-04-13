@@ -65,12 +65,12 @@
   <Project Path="Unity.VisualScripting.Shared.Editor.csproj" />
   <Project Path="Unity.AppUI.Redux.Editor.csproj" />
   <Project Path="Unity.AI.Toolkit.Compliance.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.AppUI.Undo.csproj" />
   <Project Path="Unity.AI.Generators.Contexts.csproj" />
   <Project Path="Unity.AI.Generators.Chat.csproj" />
   <Project Path="Unity.AI.Assistant.Bridge.Editor.csproj" />
   <Project Path="Unity.AI.Toolkit.Asset.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.Serialization.Editor.csproj" />
   <Project Path="Unity.AI.Assistant.AvatarHelper.Editor.csproj" />
   <Project Path="Unity.AI.Animate.Motion.Runtime.csproj" />

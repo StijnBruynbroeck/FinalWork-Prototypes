@@ -4,9 +4,9 @@ using UnityEngine.InputSystem;
 
 public class VoiceAppController : MonoBehaviour
 {
-    [Header("Verbindingen (Sleep scripts hierin)")]
+    public GroqLLMService llmService;
     public MicrophoneRecorder recorder;
-    public AssemblyAIService apiService;
+    public GroqAudioService apiService;
     public ObjectSpawner spawner;
 
     [Header("UI")]
@@ -58,11 +58,20 @@ public class VoiceAppController : MonoBehaviour
     // Deze functie wordt aangeroepen als AssemblyAI klaar is
     void OnTranscriptionSuccess(string text)
     {
-        Debug.Log("Tekst ontvangen: " + text);
+        Debug.Log("Tekst ontvangen via Whisper: " + text);
         if (resultText != null) resultText.text = text;
 
-        // Stuur de tekst naar de spawner
-        spawner.ProcessTextAndSpawn(text, UpdateStatus);
+        UpdateStatus("AI beoordeelt logica...");
+
+        // Hier bepalen we waar de speler is. Dit kun je later in je game dynamisch maken op basis van zones!
+        string currentRoom = "Server Data Control Room"; 
+
+        // We vragen de LLM om de score
+        llmService.EvaluatePlausibility(currentRoom, text, (score, reason) => 
+        {
+            // Zodra de LLM klaar is (na ~0.5 sec), sturen we de score door naar de spawner
+            spawner.ProcessTextAndSpawn(text, score, reason, UpdateStatus);
+        });
     }
 
     void UpdateStatus(string status)

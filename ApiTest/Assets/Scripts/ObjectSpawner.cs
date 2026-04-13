@@ -12,24 +12,31 @@ public struct VoiceObject
 public class ObjectSpawner : MonoBehaviour
 {
     [Header("Mijn ItHappy Objecten")]
+    public NeuroFilterAI enemyAI;
     public List<VoiceObject> spawnableObjects;
 
-    public void ProcessTextAndSpawn(string text, System.Action<string> onStatusUpdate)
+    public void ProcessTextAndSpawn(string text, int llmScore, string llmReason, System.Action<string> onStatusUpdate)
     {
         string command = text.ToLower();
-        Debug.Log("Analyseren: " + command);
+        
+        // Update de UI met de reden van de AI
+        onStatusUpdate?.Invoke($"Score: {llmScore}/100. {llmReason}");
+
+        // We triggeren SOWIESO de vijand als de score te laag is, ongeacht of het object gespawnd kon worden!
+        if (llmScore < 50 && enemyAI != null)
+        {
+            Vector3 playerLocation = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
+            enemyAI.InvestigateAnomaly(playerLocation, llmScore);
+        }
 
         // 1. Kleur bepalen
         Color objectColor = Color.white;
         bool colorFound = false;
-
         if (command.Contains("rood") || command.Contains("red")) { objectColor = Color.red; colorFound = true; }
         else if (command.Contains("blauw") || command.Contains("blue")) { objectColor = Color.blue; colorFound = true; }
         else if (command.Contains("groen") || command.Contains("green")) { objectColor = Color.green; colorFound = true; }
-        else if (command.Contains("geel") || command.Contains("yellow")) { objectColor = Color.yellow; colorFound = true; }
-        else if (command.Contains("zwart") || command.Contains("black")) { objectColor = Color.black; colorFound = true; }
 
-        // 2. Zoeken in lijst
+        // 2. Object spawnen als het bestaat
         foreach (var item in spawnableObjects)
         {
             foreach (string keyword in item.keywords)
@@ -37,14 +44,14 @@ public class ObjectSpawner : MonoBehaviour
                 if (command.Contains(keyword.ToLower()))
                 {
                     SpawnPrefab(item.prefab, objectColor, colorFound);
-                    onStatusUpdate?.Invoke($"Spawned: {item.objectName}");
-                    return;
+                    return; // Stop de functie, object is gevonden en gespawnd
                 }
             }
         }
 
+        // Als we hier zijn aangekomen, is de hele lijst doorzocht en is er geen match gevonden.
         onStatusUpdate?.Invoke("Object niet herkend.");
-    }
+    } // <--- Dit is de correcte plek voor de afsluitende accolade van ProcessTextAndSpawn
 
     private void SpawnPrefab(GameObject prefab, Color color, bool applyColor)
     {
