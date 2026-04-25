@@ -14,20 +14,18 @@ public class VoiceAppController : MonoBehaviour
     public TextMeshProUGUI statusText;
 
     private bool tKeyPressed = false;
+    private float recordingStartTime; // Nieuw: om de duur te meten
 
     void Update()
     {
-        // Check of toetsenbord aanwezig is
         if (Keyboard.current == null) return;
 
         bool tPressed = Keyboard.current.tKey.isPressed;
 
-        // Als we T indrukken en we nemen nog niet op -> START
         if (tPressed && !tKeyPressed && !recorder.IsRecording)
         {
             StartAppRecording();
         }
-        // Als we T loslaten en we waren aan het opnemen -> STOP
         else if (!tPressed && tKeyPressed && recorder.IsRecording)
         {
             StopAppRecording();
@@ -38,39 +36,52 @@ public class VoiceAppController : MonoBehaviour
 
     void StartAppRecording()
     {
-        UpdateStatus("Recording...");
+        recordingStartTime = Time.time; // Sla de starttijd op
+        UpdateStatus("<color=red>● Recording...</color>"); // Visuele indicator (rood bolletje)
         recorder.StartRecording();
     }
 
     void StopAppRecording()
     {
+        float duration = Time.time - recordingStartTime;
+
+        // BEVEILIGING: Als de opname korter is dan 0.8 seconden, negeren we het.
+        // Dit voorkomt dat 'klikjes' of ruis als hallucinaties (Koreaans) worden vertaald.
+        if (duration < 0.8f)
+        {
+            recorder.StopRecording((byte[] audioData) => { /* Doe niets met de data */ });
+            UpdateStatus("Opname te kort. Houd 'T' langer ingedrukt.");
+            Debug.LogWarning("Opname genegeerd: te kort.");
+            return;
+        }
+
         UpdateStatus("Processing Audio...");
         
-        // Hier roepen we StopRecording aan. 
-        // De code tussen { } wordt pas uitgevoerd als de audio klaar is (de Callback).
         recorder.StopRecording((byte[] audioData) => 
         {
-            // Nu hebben we de audio data! Stuur naar API.
             apiService.TranscribeAudio(audioData, OnTranscriptionSuccess, UpdateStatus);
         });
     }
 
-    // Deze functie wordt aangeroepen als AssemblyAI klaar is
     void OnTranscriptionSuccess(string text)
     {
+        // Extra check: als Whisper een leeg resultaat of alleen spaties geeft
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            UpdateStatus("Geen spraak herkend.");
+            return;
+        }
+
         Debug.Log("Tekst ontvangen via Whisper: " + text);
         if (resultText != null) resultText.text = text;
 
         UpdateStatus("AI beoordeelt logica...");
 
-        // Hier bepalen we waar de speler is. Dit kun je later in je game dynamisch maken op basis van zones!
         string currentRoom = "Server Data Control Room"; 
 
-        // We vragen de LLM om de score
-        llmService.EvaluatePlausibility(currentRoom, text, (score, reason) => 
+        llmService.EvaluatePlausibility(currentRoom, text, (llmResult) => 
         {
-            // Zodra de LLM klaar is (na ~0.5 sec), sturen we de score door naar de spawner
-            spawner.ProcessTextAndSpawn(text, score, reason, UpdateStatus);
+            spawner.ProcessTextAndSpawn(llmResult, UpdateStatus);
         });
     }
 

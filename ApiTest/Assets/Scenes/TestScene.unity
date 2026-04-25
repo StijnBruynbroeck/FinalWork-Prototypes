@@ -390,7 +390,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df2f38259a16ee548a9408491ea58676, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GroqAudioService
-  apiKey: YOUR_GROQ_API_KEY
+  apiKey:
 --- !u!114 &120257418
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -403,7 +403,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3a3d87e65ebc3c40989bc8b4c609617, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GroqLLMService
-  apiKey: YOUR_GROQ_API_KEY
+  apiKey:
 --- !u!114 &502297101 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8213010961294969328, guid: 2b23766db07ae0a4f84f3ba61c27429d, type: 3}

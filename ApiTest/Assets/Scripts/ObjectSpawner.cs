@@ -15,44 +15,40 @@ public class ObjectSpawner : MonoBehaviour
     public NeuroFilterAI enemyAI;
     public List<VoiceObject> spawnableObjects;
 
-    public void ProcessTextAndSpawn(string text, int llmScore, string llmReason, System.Action<string> onStatusUpdate)
+    public void ProcessTextAndSpawn(LLMResult aiResult, System.Action<string> onStatusUpdate)
     {
-        string command = text.ToLower();
+        // 1. UI Updaten
+        onStatusUpdate?.Invoke($"Score: {aiResult.score}/100. {aiResult.reason}");
         
-        // Update de UI met de reden van de AI
-        onStatusUpdate?.Invoke($"Score: {llmScore}/100. {llmReason}");
+        // 2. VEILIGHEIDSCHECK: Zorg dat lege (null) AI antwoorden de game niet crashen!
+        string prefabName = string.IsNullOrEmpty(aiResult.prefab_name) ? "none" : aiResult.prefab_name;
 
-        // We triggeren SOWIESO de vijand als de score te laag is, ongeacht of het object gespawnd kon worden!
-        if (llmScore < 50 && enemyAI != null)
+        Debug.Log($"AI selecteerde object: {prefabName}");
+
+        // 3. Controleer of het geldig is
+        if (prefabName.ToLower() == "none")
         {
-            Vector3 playerLocation = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
-            enemyAI.InvestigateAnomaly(playerLocation, llmScore);
+            onStatusUpdate?.Invoke("Transformatie mislukt: Object niet in database.");
+            return;
         }
 
-        // 1. Kleur bepalen
-        Color objectColor = Color.white;
-        bool colorFound = false;
-        if (command.Contains("rood") || command.Contains("red")) { objectColor = Color.red; colorFound = true; }
-        else if (command.Contains("blauw") || command.Contains("blue")) { objectColor = Color.blue; colorFound = true; }
-        else if (command.Contains("groen") || command.Contains("green")) { objectColor = Color.green; colorFound = true; }
+        // 4. Laad de prefab dynamisch in
+        // Zorg dat de AI EXACT de naam (bijv. "OfficeChair") uitspuugt, anders faalt de Load!
+        GameObject loadedPrefab = Resources.Load<GameObject>("Props/" + prefabName);
 
-        // 2. Object spawnen als het bestaat
-        foreach (var item in spawnableObjects)
+        if (loadedPrefab != null)
         {
-            foreach (string keyword in item.keywords)
-            {
-                if (command.Contains(keyword.ToLower()))
-                {
-                    SpawnPrefab(item.prefab, objectColor, colorFound);
-                    return; // Stop de functie, object is gevonden en gespawnd
-                }
-            }
+            // Object succesvol gevonden in de map! Spawnen maar.
+            Instantiate(loadedPrefab, Vector3.zero, Quaternion.identity);
+            onStatusUpdate?.Invoke($"Succes! {prefabName} ingeladen.");
         }
-
-        // Als we hier zijn aangekomen, is de hele lijst doorzocht en is er geen match gevonden.
-        onStatusUpdate?.Invoke("Object niet herkend.");
-    } // <--- Dit is de correcte plek voor de afsluitende accolade van ProcessTextAndSpawn
-
+        else
+        {
+            // Error handling als de file niet bestaat of de AI de naam verkeerd spelde
+            onStatusUpdate?.Invoke($"Error: Prefab '{prefabName}' niet gevonden in de map.");
+            Debug.LogError($"Resources.Load faalde voor bestand: Props/{prefabName}. Controleer de bestandsnaam in Unity!");
+        }
+    }
     private void SpawnPrefab(GameObject prefab, Color color, bool applyColor)
     {
         if (prefab == null) return;

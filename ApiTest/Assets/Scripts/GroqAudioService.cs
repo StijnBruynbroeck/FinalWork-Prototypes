@@ -34,25 +34,26 @@ public class GroqAudioService : MonoBehaviour
 
         List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
         
-        // We updaten naar het allernieuwste, razendsnelle audio model van Groq!
         formData.Add(new MultipartFormDataSection("model", "whisper-large-v3-turbo"));
+        
+        // 1. DE LOCKDOWN: Zeg keihard dat dit Nederlands is. Geen Koreaans of IJslands meer.
+        formData.Add(new MultipartFormDataSection("language", "nl" )); 
 
-        string aiContextPrompt = "Dit is een Nederlands bericht. This is an English message. Serverkast, washing machine, transform, error.";
-        formData.Add(new MultipartFormDataSection("prompt", aiContextPrompt));
+        formData.Add(new MultipartFormDataSection("temperature", "0.0"));
+
+        // 2. DE CONTEXT: Dit vertelt de AI welke woorden hij kan verwachten als het onduidelijk is.
+        string aiContextPrompt = "Dit is een duidelijk Nederlands commando voor een videogame. Actiewoorden: serverkast, kantoorstoel, wasmachine, plant, koffiemachine, verander, maak.";
+formData.Add(new MultipartFormDataSection("prompt", aiContextPrompt));
         
         formData.Add(new MultipartFormFileSection("file", audioData, "recording.wav", "audio/wav"));
 
         using (UnityWebRequest request = UnityWebRequest.Post(groqEndpoint, formData))
         {
-            request.SetRequestHeader("Authorization", "Bearer " + apiKey.Trim());
-            
-            // --- DEZE REGEL IS CRUCIAAL VOOR CLOUDFLARE ---
-            request.chunkedTransfer = false; 
-            // ----------------------------------------------
+            request.chunkedTransfer = false;
+           request.SetRequestHeader("Authorization", "Bearer " + apiKey);
+           
 
-            request.useHttpContinue = false;
-
-            yield return request.SendWebRequest();
+         yield return request.SendWebRequest();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
