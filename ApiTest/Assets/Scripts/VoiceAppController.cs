@@ -1,9 +1,13 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.InputSystem;
+using System.Diagnostics;
 
 public class VoiceAppController : MonoBehaviour
 {
+    public AnalyticsManager analytics; 
+    private Stopwatch timer = new Stopwatch();
+    private string lastSpokenText = ""; 
     public GroqLLMService llmService;
     public MicrophoneRecorder recorder;
     public GroqAudioService apiService;
@@ -14,7 +18,7 @@ public class VoiceAppController : MonoBehaviour
     public TextMeshProUGUI statusText;
 
     private bool tKeyPressed = false;
-    private float recordingStartTime; // Nieuw: om de duur te meten
+    private float recordingStartTime; 
 
     void Update()
     {
@@ -49,10 +53,12 @@ public class VoiceAppController : MonoBehaviour
         // Dit voorkomt dat 'klikjes' of ruis als hallucinaties (Koreaans) worden vertaald.
         if (duration < 0.8f)
         {
-            recorder.StopRecording((byte[] audioData) => { /* Doe niets met de data */ });
-            UpdateStatus("Opname te kort. Houd 'T' langer ingedrukt.");
-            Debug.LogWarning("Opname genegeerd: te kort.");
-            return;
+            recorder.StopRecording((byte[] audioData) => 
+        {
+            timer.Reset();
+            timer.Start(); // START DE KLOK!
+            apiService.TranscribeAudio(audioData, OnTranscriptionSuccess, UpdateStatus);
+        }); 
         }
 
         UpdateStatus("Processing Audio...");
@@ -65,23 +71,32 @@ public class VoiceAppController : MonoBehaviour
 
     void OnTranscriptionSuccess(string text)
     {
-        // Extra check: als Whisper een leeg resultaat of alleen spaties geeft
-        if (string.IsNullOrWhiteSpace(text))
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        lastSpokenText = text; // Onthoud wat Whisper hoorde
+
+        TerminalHacker actieveTerminal = FindObjectOfType<TerminalHacker>();
+        if (actieveTerminal != null)
         {
-            UpdateStatus("Geen spraak herkend.");
-            return;
+            // We sturen de 'text' (jouw gesproken woorden) naar het scherm
+            actieveTerminal.ControleerWachtwoord(text); 
         }
-
-        Debug.Log("Tekst ontvangen via Whisper: " + text);
-        if (resultText != null) resultText.text = text;
-
-        UpdateStatus("AI beoordeelt logica...");
-
+        
         string currentRoom = "Server Data Control Room"; 
 
         llmService.EvaluatePlausibility(currentRoom, text, (llmResult) => 
         {
+            timer.Stop(); // STOP DE KLOK!
+            long latencyMs = timer.ElapsedMilliseconds; // Dit is je harde data!
+
+            // Spawn het object
             spawner.ProcessTextAndSpawn(llmResult, UpdateStatus);
+
+            // Sla de data op in je CSV
+            if (analytics != null)
+            {
+                analytics.LogData(lastSpokenText, llmResult.prefab_name, llmResult.score, latencyMs);
+            }
         });
     }
 

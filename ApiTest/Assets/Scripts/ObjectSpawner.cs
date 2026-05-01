@@ -1,31 +1,28 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
-
-[System.Serializable]
-public struct VoiceObject
-{
-    public string objectName;
-    public string[] keywords;
-    public GameObject prefab;
-}
 
 public class ObjectSpawner : MonoBehaviour
 {
-    [Header("Mijn ItHappy Objecten")]
-    public NeuroFilterAI enemyAI;
-    public List<VoiceObject> spawnableObjects;
+    [Header("Player Morphing")]
+    public Transform playerTransform; // Sleep Qwinte's Player object hierin!
+    public GameObject playerVisuals;  // Sleep de menselijke capsule van de speler hierin!
+    
+    private GameObject currentProp;   // Houdt bij in welk object we momenteel veranderd zijn
+
+    [Header("AI & Logic")]
+     public NeuroFilterAI enemyAI; 
 
     public void ProcessTextAndSpawn(LLMResult aiResult, System.Action<string> onStatusUpdate)
     {
         // 1. UI Updaten
         onStatusUpdate?.Invoke($"Score: {aiResult.score}/100. {aiResult.reason}");
         
-        // 2. VEILIGHEIDSCHECK: Zorg dat lege (null) AI antwoorden de game niet crashen!
+        // 2. Veiligheidscheck op lege JSON velden
         string prefabName = string.IsNullOrEmpty(aiResult.prefab_name) ? "none" : aiResult.prefab_name;
-
         Debug.Log($"AI selecteerde object: {prefabName}");
 
-        // 3. Controleer of het geldig is
+        // 3. Controleer of het object geldig is
         if (prefabName.ToLower() == "none")
         {
             onStatusUpdate?.Invoke("Transformatie mislukt: Object niet in database.");
@@ -33,45 +30,76 @@ public class ObjectSpawner : MonoBehaviour
         }
 
         // 4. Laad de prefab dynamisch in
-        // Zorg dat de AI EXACT de naam (bijv. "OfficeChair") uitspuugt, anders faalt de Load!
         GameObject loadedPrefab = Resources.Load<GameObject>("Props/" + prefabName);
 
         if (loadedPrefab != null)
         {
-            // Object succesvol gevonden in de map! Spawnen maar.
-            Instantiate(loadedPrefab, Vector3.zero, Quaternion.identity);
-            onStatusUpdate?.Invoke($"Succes! {prefabName} ingeladen.");
+            // A. Als we al een prop waren, verwijder die oude prop dan eerst
+            if (currentProp != null)
+            {
+                Destroy(currentProp);
+            }
+
+            // B. Spawn de nieuwe prop en maak hem een 'kind' van Qwinte's Player object
+            currentProp = Instantiate(loadedPrefab, playerTransform);
+            
+            // C. Zet de prop netjes in het midden van de speler
+            currentProp.transform.localPosition = Vector3.zero;
+            currentProp.transform.localRotation = Quaternion.identity;
+
+            // D. START DE HOLOGRAM ANIMATIE! (Dit vervangt de oude harde switch)
+            if (playerVisuals != null && currentProp != null)
+            {
+                // Zet ALLEEN de renderer (het zichtbare model) weer aan, niet het hele object
+                Renderer rend = playerVisuals.GetComponentInChildren<Renderer>();
+                if (rend != null) rend.enabled = true; 
+                
+                StartCoroutine(SpeelYouTubeHoloMorphAf(playerVisuals, currentProp));
+            }
+
+            
+
+            onStatusUpdate?.Invoke($"Succes! Getransformeerd in {prefabName}!");
+            
         }
         else
         {
-            // Error handling als de file niet bestaat of de AI de naam verkeerd spelde
             onStatusUpdate?.Invoke($"Error: Prefab '{prefabName}' niet gevonden in de map.");
-            Debug.LogError($"Resources.Load faalde voor bestand: Props/{prefabName}. Controleer de bestandsnaam in Unity!");
+            Debug.LogError($"Resources.Load faalde voor bestand: Props/{prefabName}.");
         }
     }
-    private void SpawnPrefab(GameObject prefab, Color color, bool applyColor)
+
+    private IEnumerator SpeelYouTubeHoloMorphAf(GameObject oldBody, GameObject newProp)
     {
-        if (prefab == null) return;
+        Renderer oldRend = oldBody.GetComponentInChildren<Renderer>();
+        Renderer newRend = newProp.GetComponentInChildren<Renderer>();
 
-        GameObject obj = Instantiate(prefab);
+        // Start: Speler is zichtbaar (0), nieuwe prop is onzichtbaar/opgelost (1)
+        if (oldRend != null) oldRend.material.SetFloat("_DissolveAmount", 0f);
+        if (newRend != null) newRend.material.SetFloat("_DissolveAmount", 1f);
 
-        if (Camera.main != null)
+        float t = 0f;
+        
+        // De animatie loop die ongeveer een seconde duurt
+        while (t < 1f)
         {
-            Transform cam = Camera.main.transform;
-            obj.transform.position = cam.position + (cam.forward * 2f);
-            obj.transform.LookAt(new Vector3(cam.position.x, obj.transform.position.y, cam.position.z));
+            t += Time.deltaTime * 1.5f; // Dit is de snelheid
+            
+            if (oldRend != null) oldRend.material.SetFloat("_DissolveAmount", t);
+            if (newRend != null) newRend.material.SetFloat("_DissolveAmount", 1f - t);
+            
+            yield return null;
         }
-        else
-        {
-            obj.transform.position = new Vector3(0, 0, 2f);
-        }
 
-        if (obj.GetComponent<Rigidbody>() == null) obj.AddComponent<Rigidbody>();
+        // Zorg dat de waarden exact eindigen op hun limiet
+        if (oldRend != null) oldRend.material.SetFloat("_DissolveAmount", 1f);
+        if (newRend != null) newRend.material.SetFloat("_DissolveAmount", 0f);
+if (oldRend != null) oldRend.enabled = false;
 
-        if (applyColor)
+PlayerMovement pm = playerTransform.GetComponent<PlayerMovement>();
+        if (pm != null)
         {
-            Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
-            foreach (Renderer r in renderers) r.material.color = color;
+            pm.SwitchCamera(false); 
         }
     }
 }

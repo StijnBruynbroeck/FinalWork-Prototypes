@@ -17,16 +17,22 @@ public void EvaluatePlausibility(string roomContext, string playerInput, Action<
     private IEnumerator SendToLLM(string roomContext, string playerInput, Action<LLMResult> onComplete)
     {
         // 1. De verbeterde Prompt
-        // Geef hier de namen op van de objecten die je in je ObjectSpawner lijst hebt zitten!
-        string availablePrefabs = "air_hockey_001,bathroom_item_001,bed_001,box_001,camera_001,closet_001,coffee_machine_001,coffee_table_001,door_001,dresser_001,plant_001,office_table_001,couch_001,fridge_001,lamp_001,lounge_chair_001,washing_machine_001"; 
+        // Geef hier de namen op van de objecten die je in je ObjectSpawner lijst hebt zitten!// 1. UPDATE: Ik heb 'office_chair_001' en 'server_001' (als voorbeeld) toegevoegd. 
+// Zorg dat je deze prefabs ook écht in je Unity Resources map hebt staan!
+string availablePrefabs = "air_hockey_001,bathroom_item_001,bed_001,box_001,camera_001,closet_001,coffee_machine_001,coffee_table_001,door_001,dresser_001,plant_001,office_table_001,server_001,couch_001,fridge_001,lamp_001,lounge_chair_001,washing_machine_001"; 
+
+// 2. UPDATE: De System Prompt is nu veel strenger afgebakend.
 string systemPrompt = "Je bent de Neuro-Filter AI in een sci-fi stealth videogame. " +
                       "De speler spreekt in het Nederlands of Engels en wil transformeren in een object. " +
                       "Jouw taak is dubbel: " +
-                      "1. Beoordeel of dit object logisch in een retro-serverruimte past (score 0-100). " +
-                      $"2. Vertaal het gekozen object naar de dichtstbijzijnde Engelse prefab uit deze exacte lijst: [{availablePrefabs}]. " +
-                      "Als de speler iets roept dat totaal niet in de lijst past, vul in: 'none'. " +
-                      "Antwoord UITSLUITEND met een JSON object met drie velden: 'score' (int), 'reason' (string), en 'prefab_name' (string, EXACT overgenomen uit de lijst inclusief hoofdletters).";
-        string userPrompt = $"Huidige locatie: {roomContext}. De speler zegt: '{playerInput}'";
+                      "1. Beoordeel STRENG of het object onopvallend in een retro-serverruimte past (score 0-100). " +
+                      "   - Servers, kabels, camera's en kantoormeubilair krijgen een hoge score (80-100). " +
+                      "   - Wasmachines, bedden, planten, speelgoed of sportattributen horen hier NIET en krijgen altijd een score onder de 20. " +
+                      "   - ANTI-PANIEK REGEL: Als de speler aarzelt ('uh', 'ehh'), vaag is ('doe maar iets', 'maak me onzichtbaar'), of geen specifiek voorwerp noemt, geef dan ALTIJD score 0 en prefab_name 'none'. " +
+                      $"2. Vertaal het object naar een prefab uit deze EXACTE lijst: [{availablePrefabs}]. " +
+                      "   - BELANGRIJK: Probeer niet wanhopig te matchen. Als het object niet in de lijst past, vul dan verplicht 'none' in. " +
+                      "Antwoord UITSLUITEND met een JSON object met 3 velden: 'score' (int), 'reason' (string), en 'prefab_name' (string).";
+string userPrompt = $"Huidige locatie: {roomContext}. De speler zegt: '{playerInput}'";
 
         // 2. We bouwen het request nu op de veilige C# manier (geen handmatige string-knutsels meer)
         GroqChatRequest chatRequest = new GroqChatRequest
