@@ -5,7 +5,9 @@ public class PlayerMovement : MonoBehaviour
 {
     public float moveSpeed = 5f;
     // Let op: Ik heb deze iets verlaagd omdat de nieuwe Mouse.delta grotere getallen teruggeeft dan de oude GetAxis
-    public float mouseSensitivity = 10f; 
+    public float mouseSensitivity = 10f;
+
+    
 
     private CharacterController controller;
     private Camera firstPersonCamera;
@@ -17,12 +19,15 @@ public class PlayerMovement : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         
-        var cameras = GetComponentsInChildren<Camera>();
+        var cameras = GetComponentsInChildren<Camera>(true);
         foreach (var cam in cameras)
         {
-            if (cam.gameObject.name == "FirstPersonCamera") firstPersonCamera = cam;
-            else if (cam.gameObject.name == "ThirdPersonCamera") thirdPersonCamera = cam;
+            Debug.Log("Camera gevonden: " + cam.gameObject.name);
+            if (cam.gameObject.name == "FirstpersonCamera") firstPersonCamera = cam;
+            else if (cam.gameObject.name == "ThirdpersonCamera") thirdPersonCamera = cam;
         }
+        
+        Debug.Log("FirstPerson: " + (firstPersonCamera != null) + " ThirdPerson: " + (thirdPersonCamera != null));
 
         Cursor.lockState = CursorLockMode.Locked;
         SwitchCamera(true);
@@ -30,8 +35,14 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Veiligheidscheck of toetsenbord en muis wel aangesloten zijn
         if (Keyboard.current == null || Mouse.current == null) return;
+
+        // Check of we gemorpht zijn - geen movement mogelijk
+        ObjectSpawner spawner = GetComponentInParent<ObjectSpawner>();
+        if (spawner != null && spawner.IsMorphed)
+        {
+            return; // Geen movement als gemorpht
+        }
 
         // Switchen tussen First en Third person met 'P'
         if (Keyboard.current.pKey.wasPressedThisFrame)
