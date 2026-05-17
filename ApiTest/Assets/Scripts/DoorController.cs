@@ -5,15 +5,17 @@ public class DoorController : MonoBehaviour
 {
     public string animStateName = "DoorAnimation";
     public float animDuration = 1.667f;
+    public bool startLocked = false;
 
     private Animator animator;
     private Animation legacyAnim;
     private bool isOpen = false;
+    private bool isLocked;
     private Coroutine animRoutine;
 
     void Start()
     {
-        animator = GetComponent<Animator>();
+        isLocked = startLocked;
         if (animator == null)
             animator = GetComponentInParent<Animator>();
         if (animator == null)
@@ -44,6 +46,7 @@ public class DoorController : MonoBehaviour
     public void OpenDoor()
     {
         if (isOpen) return;
+        if (isLocked) { Debug.Log("Deur is vergrendeld!"); return; }
         isOpen = true;
 
         bool afgespeeld = false;
@@ -128,8 +131,16 @@ public class DoorController : MonoBehaviour
 
     public void UnlockDoor()
     {
+        isLocked = false;
         Debug.Log("Deur ontgrendeld!");
     }
 
+    public void LockDoor()
+    {
+        isLocked = true;
+        Debug.Log("Deur vergrendeld!");
+    }
+
     public bool IsOpen() => isOpen;
+    public bool IsLocked() => isLocked;
 }

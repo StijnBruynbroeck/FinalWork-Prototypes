@@ -149,19 +149,15 @@ public class VoiceAppController : MonoBehaviour
         // --- 1. DIRECT DEUR COMMANDO ---
         if (RouteerNaarDeur(text)) return;
 
-        // --- 2. NIEUWE PUZZEL CHECK ---
+        // --- 2. TERMINAL CHECK (actieve terminal waar speler bij staat) ---
+        if (RouteerNaarTerminal(text)) return;
+
+        // --- 3. NIEUWE PUZZEL CHECK ---
         VoiceRiddlePuzzle nieuwePuzzel = FindObjectOfType<VoiceRiddlePuzzle>();
         if (nieuwePuzzel != null && nieuwePuzzel.IsInRange && !nieuwePuzzel.IsCompleted)
         {
             nieuwePuzzel.ProcessVoiceInput(text);
             return;
-        }
-
-        // --- 3. TERMINAL CHECK ---
-        TerminalHacker actieveTerminal = FindObjectOfType<TerminalHacker>();
-        if (actieveTerminal != null)
-        {
-            actieveTerminal.ControleerWachtwoord(text);
         }
 
         // --- 4. KAMER DEFINIEREN (dynamisch via zone detection) ---

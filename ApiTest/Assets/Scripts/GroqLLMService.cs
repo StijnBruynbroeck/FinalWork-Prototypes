@@ -83,7 +83,7 @@ public class GroqLLMService : MonoBehaviour
                               "Rules: " +
                               "1) Score how well the object fits in the current location (0-100). Items that belong there=high, out of place=low. " +
                               "Vague/no object: score=0, prefab_name='none'. " +
-                              $"2) Map object to prefab name from list: [{availablePrefabs}]. " +
+                              $"2)op Map object to prefab name from list: [{availablePrefabs}]. " +
                               "chair/office chair/seat → lounge_chair_001. server/cabinet → closet_001 or closet_002. box/crate → box_001. " +
                               "3) door_action='none' unless 'open/close the door'. " +
                               "4) unmorph=true if player says 'unmorph/turn me back/revert/change me back/undo'. " +

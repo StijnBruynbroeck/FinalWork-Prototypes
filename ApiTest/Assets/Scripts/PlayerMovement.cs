@@ -1,13 +1,10 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Deze is cruciaal voor het nieuwe systeem!
+using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    // Let op: Ik heb deze iets verlaagd omdat de nieuwe Mouse.delta grotere getallen teruggeeft dan de oude GetAxis
-    public float mouseSensitivity = 10f;
-
-    
+    public float mouseSensitivity = 100f;
 
     private CharacterController controller;
     private Camera firstPersonCamera;
@@ -17,17 +14,17 @@ public class PlayerMovement : MonoBehaviour
 
     void Start()
     {
-        controller = GetComponent<CharacterController>();
+        controller = GetComponentInChildren<CharacterController>();
         
-        var cameras = GetComponentsInChildren<Camera>(true);
+        var cameras = GetComponentsInChildren<Camera>();
+        string camNames = "";
         foreach (var cam in cameras)
         {
-            Debug.Log("Camera gevonden: " + cam.gameObject.name);
-            if (cam.gameObject.name == "FirstpersonCamera") firstPersonCamera = cam;
-            else if (cam.gameObject.name == "ThirdpersonCamera") thirdPersonCamera = cam;
+            camNames += cam.gameObject.name + ", ";
+            if (cam.gameObject.name.Equals("FirstpersonCamera", System.StringComparison.OrdinalIgnoreCase)) firstPersonCamera = cam;
+            else if (cam.gameObject.name.Equals("ThirdpersonCamera", System.StringComparison.OrdinalIgnoreCase)) thirdPersonCamera = cam;
         }
-        
-        Debug.Log("FirstPerson: " + (firstPersonCamera != null) + " ThirdPerson: " + (thirdPersonCamera != null));
+        Debug.Log($"Camera's gevonden op player: [{camNames}] fp={(firstPersonCamera != null ? firstPersonCamera.gameObject.name : "null")} tp={(thirdPersonCamera != null ? thirdPersonCamera.gameObject.name : "null")}");
 
         Cursor.lockState = CursorLockMode.Locked;
         SwitchCamera(true);
@@ -35,62 +32,48 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        if (Keyboard.current == null || Mouse.current == null) return;
+        if (Keyboard.current == null) return;
 
-        // Check of we gemorpht zijn - geen movement mogelijk
-        ObjectSpawner spawner = GetComponentInParent<ObjectSpawner>();
-        if (spawner != null && spawner.IsMorphed)
-        {
-            return; // Geen movement als gemorpht
-        }
-
-        // Switchen tussen First en Third person met 'P'
         if (Keyboard.current.pKey.wasPressedThisFrame)
         {
             isFirstPerson = !isFirstPerson;
+            Debug.Log($"P pressed, switching to {(isFirstPerson ? "first" : "third")} person. cams: fp={firstPersonCamera?.name}, tp={thirdPersonCamera?.name}");
             SwitchCamera(isFirstPerson);
         }
 
         float horizontal = 0f;
         float vertical = 0f;
 
-        // WASD Movement
         if (Keyboard.current.wKey.isPressed) vertical = 1f;
         if (Keyboard.current.sKey.isPressed) vertical = -1f;
         if (Keyboard.current.aKey.isPressed) horizontal = -1f;
         if (Keyboard.current.dKey.isPressed) horizontal = 1f;
 
         float currentSpeed = moveSpeed;
-        if (Keyboard.current.leftShiftKey.isPressed) currentSpeed += moveSpeed * 0.5f;
+        if (Keyboard.current.shiftKey.isPressed) currentSpeed += moveSpeed * 0.5f;
 
         Vector3 move = transform.right * horizontal + transform.forward * vertical;
         controller.Move(move * currentSpeed * Time.deltaTime);
 
-        // Muis input lezen
-        float mouseX = Mouse.current.delta.x.ReadValue() * mouseSensitivity * Time.deltaTime;
-        float mouseY = Mouse.current.delta.y.ReadValue() * mouseSensitivity * Time.deltaTime;
+        if (Mouse.current == null) return;
 
-        if (isFirstPerson)
+        Vector2 mouseDelta = Mouse.current.delta.ReadValue();
+        float mouseX = mouseDelta.x * mouseSensitivity * Time.deltaTime;
+        float mouseY = mouseDelta.y * mouseSensitivity * Time.deltaTime;
+
+        if (isFirstPerson && firstPersonCamera != null)
         {
             xRotation -= mouseY;
             xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
-            if (firstPersonCamera != null)
-            {
-                firstPersonCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-            }
-            transform.Rotate(Vector3.up * mouseX);
+            firstPersonCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         }
-        else
-        {
-            transform.Rotate(Vector3.up * mouseX);
-        }
+
+        transform.Rotate(Vector3.up * mouseX);
     }
 
     public void SwitchCamera(bool firstPerson)
     {
-        isFirstPerson = firstPerson; // Houd de status synchroon
-        
         if (firstPersonCamera != null) firstPersonCamera.enabled = firstPerson;
         if (thirdPersonCamera != null) thirdPersonCamera.enabled = !firstPerson;
     }
