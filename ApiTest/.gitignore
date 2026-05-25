@@ -76,3 +76,4 @@ Assets/_Recovery/
 
 # LLM performance logs (generated at runtime)
 Assets/LLM_Performance_Log.csv
+Assets/LLM_Performance_Log.csv.meta
