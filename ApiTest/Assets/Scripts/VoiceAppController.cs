@@ -145,6 +145,7 @@ public class VoiceAppController : MonoBehaviour
         if (string.IsNullOrWhiteSpace(text)) return;
 
         lastSpokenText = text;
+        if (resultText != null) resultText.text = text;
 
         // --- 1. DIRECT DEUR COMMANDO ---
         if (RouteerNaarDeur(text)) return;
@@ -225,19 +226,12 @@ public class VoiceAppController : MonoBehaviour
         TerminalHacker[] terminals = FindObjectsOfType<TerminalHacker>();
         foreach (var t in terminals)
         {
-            if (t.IsActief)
+            if (t.IsActief && t.ControleerWachtwoord(text))
             {
-                t.ControleerWachtwoord(text);
                 return true;
             }
         }
 
-        TerminalHacker fallback = FindClosestTerminal();
-        if (fallback != null)
-        {
-            fallback.ControleerWachtwoord(text);
-            return true;
-        }
         return false;
     }
 

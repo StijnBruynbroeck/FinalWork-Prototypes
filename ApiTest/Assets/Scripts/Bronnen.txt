@@ -1,0 +1,343 @@
+BRONNEN & REFERENCES — ApiTest Project
+==========================================
+
+Project: Unity 6 Natural User Interface
+
+1. EXTERNE API'S & SERVICES
+----------------------------------------
+
+1.1 AssemblyAI (Cloud Speech-to-Text — Legacy)
+    Doel: Cloud-gebaseerde spraakherkenning (oudere implementatie,
+          vervangen door lokale Whisper)
+    Link: https://www.assemblyai.com/
+    API Docs: https://www.assemblyai.com/docs/
+    Endpoints gebruikt:
+      - POST /v2/upload          -> https://api.assemblyai.com/v2/upload
+      - POST /v2/transcript      -> https://api.assemblyai.com/v2/transcript
+      - GET  /v2/transcript/{id} -> https://api.assemblyai.com/v2/transcript/{id}
+
+1.2 Whisper.cpp (Lokale Speech-to-Text)
+    Doel: Lokale spraakherkenning via whisper.cpp server op poort 9090
+    GitHub: https://github.com/ggml-org/whisper.cpp
+    Docs (HTTP Server): https://github.com/ggml-org/whisper.cpp/blob/master/examples/server/README.md
+    Gebruikt model: ggml-base.bin
+    Endpoint: http://localhost:9090/inference
+
+1.3 Ollama (Lokale LLM Server)
+    Doel: Lokaal draaien van large language models voor AI-beoordeling
+    Website: https://ollama.ai
+    GitHub: https://github.com/ollama/ollama
+    Docs: https://github.com/ollama/ollama/tree/main/docs
+    Gebruikte modellen:
+      - llama3:latest -> https://ollama.com/library/llama3
+      - phi3:mini     -> https://ollama.com/library/phi3
+    Endpoint: http://localhost:11434/v1/chat/completions
+    Compatibel met OpenAI Chat Completions API formaat.
+
+2. UNITY PACKAGES & FRAMEWORKS
+----------------------------------------
+
+2.1 Unity Engine
+    Versie: 6000.3.3f1 (Unity 6)
+    Website: https://unity.com
+    Download: https://unity.com/download
+    Release Notes: https://unity.com/releases/editor/whats-new/6000.3.3
+
+2.2 Universal Render Pipeline (URP)
+    Versie: 17.3.0
+    Docs: https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@17.3/manual/
+    Kenmerken: Forward+ rendering, SSAO, 4x MSAA (PC), 4 shadow cascades
+
+2.3 Unity Input System
+    Versie: 1.17.0
+    Docs: https://docs.unity3d.com/Packages/com.unity.inputsystem@1.17/manual/
+    Gebruik: Keyboard.current voor T-toets (opname), R-toets (unmorph),
+             WASD (beweging), muis (kijken)
+    Action Map: Assets/InputSystem_Actions.inputactions
+
+2.4 AI Navigation (NavMesh)
+    Versie: 2.0.9
+    Docs: https://docs.unity3d.com/Packages/com.unity.ai.navigation@2.0/manual/
+    Gebruik: Enemy pathfinding (EnemyAI.cs, NeuroFilterAI.cs)
+    NavMesh data: Assets/Scenes/TestScene/NavMesh-Cube.asset
+
+2.5 TextMesh Pro
+    Docs: https://docs.unity3d.com/Manual/com.unity.textmeshpro.html
+    Gebruik: Terminal UI, status/output teksten, terminal display
+    Fonts: LiberationSans SDF (default), JetBrains Mono SDF (terminal)
+
+2.6 Shader Graph
+    Docs: https://docs.unity3d.com/Packages/com.unity.shadergraph@17.3/manual/
+    Gebruik: HoloDissolve.shadergraph (morphing dissolve effect)
+    Tutorial (dissolve effect): https://danielilett.com/2020-04-15-tut5-4-urp-dissolve/
+    GitHub (dissolve URP): https://github.com/daniel-ilett/dissolve-urp
+    Tutorial (hologram shader): https://learn.unity.com/tutorial/create-a-hologram-shader
+
+2.7 Unity UI (uGUI)
+    Versie: 2.0.0
+    Docs: https://docs.unity3d.com/Packages/com.unity.ugui@2.0/manual/
+    Gebruik: Canvas, Buttons (FurnitureMorphing), Images (SuspicionUI),
+             GameOver scherm
+
+2.8 Unity Post Processing
+    Versie: 3.5.1
+    Gebruik: VHS filter profile (Vignette, LensDistortion,
+             ChromaticAberration, ColorAdjustments)
+
+2.9 UnityWebRequest
+    Docs: https://docs.unity3d.com/Manual/UnityWebRequest.html
+    Gebruik: HTTP POST voor LLM (GroqLLMService.cs),
+             Whisper (GroqAudioService.cs),
+             AssemblyAI (ApiCall.cs)
+
+3. 3D ASSETS & MODELLEN
+----------------------------------------
+
+3.1 Furniture Mega Pack (OneSquareFoot)
+    Asset Store: https://assetstore.unity.com/packages/3d/props/furniture/furniture-mega-pack-free-330002
+    Prijs: Gratis
+    Inhoud: 500+ prefabs (Sofas, Chairs, Tables, Closets, Bathroom)
+    Licentie: Standard Unity Asset Store EULA
+
+
+3.2 Eigen 3D Modellen (Unity_FinalWork_SendOuts)
+    FBX bestanden in Assets/Unity_FinalWork_SendOuts/:
+      - Area1_MeubelShowroom.fbx (hoofd showroom model)
+      - Area1_MeubelShowroom_Floor.fbx (vloer)
+      - Area1_MeubelShowroomJoined_Floor.fbx (samengevoegde vloer)
+
+3.3 Resources/Props/ Prefabs (10 stuks)
+    Map: Assets/Resources/Props/
+    Gebruik: Dynamisch geladen via Resources.Load<GameObject>("Props/...")
+    Prefabs: Bed01, Chair01, OfficeChair, Bench, Closet01, Cushion01,
+             Drawer01, Sofa01, Table01, BathTub01
+
+3.4 Resources Modellen
+    Map: Assets/Resources/
+    FBX: Area1_MeubelShowroom_AlmostDone.fbx, CodeStand.fbx
+    Anim: DoorAnimation.anim (deur draait 0->90 graden Y)
+
+4. FONTS
+----------------------------------------
+
+4.1 JetBrains Mono
+    Website: https://www.jetbrains.com/lp/mono/
+    GitHub: https://github.com/JetBrains/JetBrainsMono
+    Licentie: SIL Open Font License (OFL)
+    Gebruik: Terminal UI (Assets/JetBrainsMono-2.304/)
+
+4.2 LiberationSans
+    Licentie: SIL Open Font License (OFL)
+    Gebruik: Standaard TextMesh Pro font
+
+5. DESIGN PATTERNS & ALGORITMES
+----------------------------------------
+
+5.1 State Pattern
+    - TerminalHacker.cs: TerminalFase (Inactief, Boot, HackMinigame, etc.)
+    - EnemyAI.cs: EnemyState (Roam, Chase, Investigate)
+    - NeuroFilterAI.cs: Patrol vs Investigate
+
+5.2 Observer Pattern (Events)
+    - AudioEventSystem.cs: Static event OnSoundEmitted
+    - HackMinigame.cs: OnHackSuccess, OnHackFailed, OnAttemptUsed
+    - ZoneData.cs: OnEnter, OnExit events
+    - EnemyAI.cs: OnDetected, OnAlert events
+
+5.3 Chain of Responsibility (Routing)
+    - VoiceAppController.cs: Spraak routing volgorde:
+      1. Deur commando (RouteerNaarDeur)
+      2. Terminal hack (RouteerNaarTerminal)
+      3. Puzzel (VoiceRiddlePuzzle)
+      4. LLM morphing (EvaluatePlausibility)
+
+5.4 Adapter Pattern
+    - DoorController.cs: Uniforme interface voor 3 animatiesystemen:
+      Legacy Animation, Mecanim Animator, Transform rotatie
+
+5.5 Levenshtein Afstand (Fuzzy String Matching)
+    - HackMinigame.cs: VindBesteMatch() met tolerantie
+    - TerminalHacker.cs: ZelfdeAls() voor hack stappen
+    - Oorspronkelijke paper: Levenshtein, V. I. (1966). "Binary codes capable of correcting deletions, insertions, and reversals". Soviet Physics Doklady, 10(8), 707-710.
+    - Link: https://www.mathnet.ru/eng/dan31411
+
+5.6 Fisher-Yates Shuffle
+    - HackMinigame.cs: Randomisatie van woordvolgorde
+    - Academisch Standaardwerk: Knuth, D. E. (1997). "The Art of Computer Programming, Volume 2: Seminumerical Algorithms" (3rd ed.). Addison-Wesley Professional. (Algoritme P, blz.145).	
+    - Oorspronkelijke publicatie: Fisher, R. A., & Yates, F. (1938). "Statistical tables for biological, agricultural and medical research".
+
+5.7 WAV Generator (16-bit PCM)
+    - MicrophoneRecorder.cs: Handgeschreven RIFF WAV header + sample conversie
+    - Officiële Specificatie: IBM Corporation & Microsoft Corporation (1991). "Multimedia Programming Interface and Data Specifications 1.0".
+    - Link: https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf
+
+6. AI MODELLEN
+----------------------------------------
+
+6.1 Llama 3 (Meta)
+    Ollama: https://ollama.com/library/llama3
+    Model: llama3:latest (8B parameters)
+    Gebruik: Default model voor alle LLM-aanroepen in GroqLLMService.cs
+
+6.2 Phi-3 Mini (Microsoft)
+    Ollama: https://ollama.com/library/phi3
+    Model: phi3:mini (3.8B parameters)
+    Gebruik: Alternatief model (vermeld in setup instructies)
+
+6.3 Whisper (OpenAI)
+    GitHub: https://github.com/openai/whisper
+    C++ Port (whisper.cpp): https://github.com/ggml-org/whisper.cpp
+    Model: ggml-base.bin (base model, gequantiseerd naar GGML formaat)
+
+
+
+7. TUTORIALS & REFERENTIES
+----------------------------------------
+
+7.1 Unity Shader Graph - Dissolve Effect
+    Tutorial: https://danielilett.com/2020-04-15-tut5-4-urp-dissolve/
+    GitHub: https://github.com/daniel-ilett/dissolve-urp
+
+7.2 Brackeys - Dissolve Shader Tutorial
+    YouTube: https://www.youtube.com/watch?v=taMp1g1pBeE
+
+7.3 Unity Learn - Hologram Shader
+    Tutorial: https://learn.unity.com/tutorial/create-a-hologram-shader
+
+7.4 Ollama Setup Guide
+    Officieel: https://ollama.ai/download
+    Guide: https://ollama.com/blog/ollama-setup-guide
+
+7.5 whisper.cpp HTTP Server
+    README: https://github.com/ggml-org/whisper.cpp/blob/master/examples/server/README.md
+
+7.6 AssemblyAI API Documentation
+    Docs: https://www.assemblyai.com/docs/
+
+8. PROJECT-SPECIFIEKE BESTANDEN
+----------------------------------------
+
+Alle scripts: Assets/Scripts/
+- GroqLLMService.cs      -> LLM client (Ollama)
+- GroqAudioService.cs    -> Whisper STT client
+- VoiceAppController.cs  -> Hoofdcontroller voice flow
+- ObjectSpawner.cs       -> Morphing prefab instantiatie
+- TerminalHacker.cs      -> Terminal hack minigame state machine
+- HackMinigame.cs        -> Woordraderspel met Levenshtein matching
+- DoorController.cs      -> Deur besturing (3 animatiesystemen)
+- EnemyAI.cs             -> Vijand AI (NavMesh, suspicion)
+- EnemyVision.cs         -> Vijand zicht (view cone, LLM multiplier)
+- PlayerMovement.cs      -> First/Third person beweging
+- MicrophoneRecorder.cs  -> Microfoon opname + WAV conversie
+- AnalyticsManager.cs    -> CSV logging (LLM_Performance_Log.csv)
+- ApiCall.cs             -> Legacy AssemblyAI cloud STT
+- MicController.cs       -> Microfoon volume monitoring
+- AudioEventSystem.cs    -> Static event bus voor geluiden
+- FurnitureCounter.cs    -> Meubel telling puzzel
+- FurnitureMorphing.cs   -> Legacy UI-gebaseerde morphing
+- VoiceRiddlePuzzle.cs   -> LLM-gestuurde meerstaps puzzel
+- VoicePuzzle.cs         -> Eenvoudige code-gebaseerde puzzel
+- ZoneDetectionManager.cs -> Zone detectie via triggers
+- ZoneData.cs            -> Zone metadata component
+- TerminalUI.cs          -> Terminal typewriter/color effects
+- TerminalDisplay.cs     -> Boot sequence + cursor animatie
+- SuspicionUI.cs         -> Suspicion balk UI
+- NeuroFilterAI.cs       -> Legacy waypoint AI
+- AutomatedTester.cs     -> F12 batch test tool
+- GameOverManager.cs     -> Game over + scene reload
+
+Configuratie/Setup bestanden:
+- Assets/Scripts/ServerSetupInstructies.txt
+- Assets/Scripts/UnitySetupInstructies.txt
+- Assets/LLM_Performance_Log.csv
+
+Scenes:
+- Assets/Scenes/TestScene.unity (hoofdscene)
+- Assets/Scenes/SampleScene.unity (debug/test scene)
+
+9. LICENTIES
+----------------------------------------
+- JetBrains Mono: SIL Open Font License (Assets/JetBrainsMono-2.304/OFL.txt)
+- LiberationSans: SIL Open Font License
+- whisper.cpp: MIT License
+- Ollama: MIT License
+- Unity Assets: Standard Unity Asset Store EULA
+
+
+10. ARTIFICIAL INTELLIGENCE & LOCAL PROCESSING (THEORIE)
+----------------------------------------
+
+10.1 Llama 3: Open Foundation and Chat Models
+     Auteur: Meta AI (2024).
+     Link: https://llama.meta.com/llama3/
+     Doel: Officiële paper van het Llama 3 model dat via Ollama draait.
+
+10.2 llama.cpp
+     Auteur: G. Gerganov (2023). GitHub.
+     Link: https://github.com/ggerganov/llama.cpp
+     Doel: Fundering van lokale AI op consumentenhardware (gebruikt door Ollama).
+
+10.3 A Survey of Large Language Models
+     Auteur: W.X. Zhao et al. (2023).
+     Link: https://arxiv.org/abs/2303.18223
+     Doel: Wetenschappelijke achtergrond over de evolutie en werking van LLM's.
+
+10.4 Generative Agents: Interactive Simulacra of Human Behavior
+     Auteur: J.S. Park et al. (2023). Stanford University.
+     Link: https://arxiv.org/abs/2304.03442
+     Doel: Onderbouwing van 'Semantic Plausibility' en het integreren van AI in interactieve omgevingen.
+
+10.5 Voyager: An Open-Ended Embodied Agent with Large Language Models
+     Auteur: G. Wang et al. (2023).
+     Link: https://arxiv.org/abs/2305.16291
+     Doel: Contextueel bewijs hoe AI ruimtelijke 3D-werelden (zoals games) kan interpreteren.
+
+10.6 Robust Speech Recognition via Large-Scale Weak Supervision
+     Auteur: A. Radford et al. (2022). OpenAI.
+     Link: https://github.com/openai/whisper
+     Doel: De officiële whitepaper achter het Whisper-model.
+
+11. HUMAN-COMPUTER INTERACTION & ACCESSIBILITY (UX)
+----------------------------------------
+
+
+11.1 How do users know what to say?
+     Auteur: N. Yankelovich (1996). Interactions, 3(6), 32-43.
+     Link: https://dl.acm.org/doi/10.1145/242485.242504
+     Doel: Wetenschappelijk bewijs waarom rigide 'keyword spotting' faalt bij spraakinterfaces.
+
+11.2 Xbox Accessibility Guidelines (XAGs) - Voice Chat and Communication
+     Auteur: Microsoft (2024).
+     Link: https://learn.microsoft.com/en-us/gaming/accessibility/guidelines
+     Doel: Verantwoording voor de toegankelijkheid van het product voor de hands-free doelgroep.
+
+12. GAME DESIGN & STEALTH MECHANICS
+----------------------------------------
+
+12.1 Flow in games (and everything else)
+     Auteur: J. Chen (2007). Communications of the ACM.
+     Link: https://dl.acm.org/doi/10.1145/1232743.1232769
+     Doel: Definitie van 'Flow State' en waarom immersie cruciaal is voor stealth-games.
+
+12.2 Game Programming Patterns
+     Auteur: R. Nystrom (2014). Genever Benning.
+     Link: https://gameprogrammingpatterns.com/
+     Doel: Academische referentie voor het ontwerpen van schaalbare C# architectuur.
+
+12.3 An Architectural Approach to Level Design
+     Auteur: C.W. Totten (2014). CRC Press.
+     Link: https://www.routledge.com/An-Architectural-Approach-to-Level-Design/Totten/p/book/9781138413665
+     Doel: Level design theorie, toegepast op de 'Context Zones' en stealth object plaatsing.
+
+13. CONCURRENTIE & MARKTANALYSE
+----------------------------------------
+
+13.1 VoiceAttack
+     Ontwikkelaar: VoiceAttack Games (2024).
+     Link: https://voiceattack.com/
+     Doel: Referentie van marktstandaard concurrentiesoftware (zonder semantic intent).
+
+13.2 Garry's Mod - Prop Hunt Game Mode
+     Ontwikkelaar: Facepunch Studios (2006).
+     Link: https://gmod.facepunch.com/
+     Doel: Referentiekader voor de oorsprong van de "verander in een object" game mechanic.

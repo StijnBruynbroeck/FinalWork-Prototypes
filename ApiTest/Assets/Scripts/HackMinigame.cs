@@ -96,20 +96,20 @@ public class HackMinigame : MonoBehaviour
         if (match == correctWoord)
         {
             isVoltooid = true;
-            Debug.Log("[HackMinigame] CORRECT! Hack geslaagd!");
+            Debug.Log("[HackMinigame] CORRECT! Hack successful!");
             OnHackSuccess?.Invoke();
             return 100;
         }
 
         pogingenOver--;
         int likeness = BerekenLikeness(match, correctWoord);
-        Debug.Log($"[HackMinigame] FOUT! '{match}' = {likeness}/{correctWoord.Length} correct. Pogingen over: {pogingenOver}");
+        Debug.Log($"[HackMinigame] INCORRECT! '{match}' = {likeness}/{correctWoord.Length} correct. Pogingen over: {pogingenOver}");
         OnAttemptUsed?.Invoke(pogingenOver, maxPogingen);
 
         if (pogingenOver <= 0)
         {
             isVoltooid = true;
-            Debug.Log("[HackMinigame] FAILED! Geen pogingen meer!");
+            Debug.Log("[HackMinigame] FAILED! No more tries!");
             OnHackFailed?.Invoke();
             return -3;
         }
@@ -279,12 +279,12 @@ public class HackMinigame : MonoBehaviour
         grid += dudLine;
         grid += "╚══════════════════════════════════╝\n";
 
-        grid += $"\nPOGINGEN: {pogingenOver}/{maxPogingen}";
+        grid += $"\nTRIES LEFT: {pogingenOver}/{maxPogingen}";
 
         if (!string.IsNullOrEmpty(laatstGeselecteerd) && laatstGeselecteerd != correctWoord)
         {
             int l = BerekenLikeness(laatstGeselecteerd, correctWoord);
-            grid += $"  |  LAATSTE: {laatstGeselecteerd} = {l}/{correctWoord.Length} CORRECT";
+            grid += $"  |  LAST: {laatstGeselecteerd} = {l}/{correctWoord.Length} CORRECT";
         }
 
         return grid;

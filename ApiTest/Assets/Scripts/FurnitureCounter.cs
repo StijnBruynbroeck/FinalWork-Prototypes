@@ -10,13 +10,13 @@ public class FurnitureCounter : MonoBehaviour
         public string displayName = "COUCH";
         public string searchTag = "couch";
         public int expectedCount = 3;
-        public string hint = "tel de banken in de showroom";
+        public string hint = "Count the couches in the showroom";
     }
 
     [Header("Meubel Targets")]
     public FurnitureTarget[] furnitureTargets = new FurnitureTarget[] {
-        new FurnitureTarget { displayName = "COUCH", searchTag = "couch", expectedCount = 3, hint = "Tel de banken in de showroom" },
-        new FurnitureTarget { displayName = "LAMP", searchTag = "lamp", expectedCount = 2, hint = "Tel de lampen in de showroom" }
+        new FurnitureTarget { displayName = "COUCH", searchTag = "couch", expectedCount = 3, hint = "Count the couches in the showroom" },
+        new FurnitureTarget { displayName = "LAMP", searchTag = "lamp", expectedCount = 2, hint = "Count the lamps in the showroom" }
     };
 
     [Header("Deur")]
@@ -56,11 +56,11 @@ public class FurnitureCounter : MonoBehaviour
 
     private string GenereerCodePrompt()
     {
-        string prompt = "ZEG: ";
+        string prompt = "Say: ";
         for (int i = 0; i < furnitureTargets.Length; i++)
         {
             if (i > 0) prompt += " en ";
-            prompt += $"\"[{furnitureTargets[i].displayName}] = [...getal]\"";
+            prompt += $"\"[{furnitureTargets[i].displayName}] = [...number]\"";
         }
         return prompt;
     }

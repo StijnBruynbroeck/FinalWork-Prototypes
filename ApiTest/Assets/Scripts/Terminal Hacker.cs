@@ -215,41 +215,41 @@ public class TerminalHacker : MonoBehaviour
         }
     }
 
-    public void ControleerWachtwoord(string gesprokenTekst)
+    public bool ControleerWachtwoord(string gesprokenTekst)
     {
-        if (!isActief) return;
+        if (!isActief) return false;
 
         switch (huidigeFase)
         {
             case TerminalFase.HackMinigame:
-                VerwerkHackMinigame(gesprokenTekst);
-                break;
+                return VerwerkHackMinigame(gesprokenTekst);
 
             case TerminalFase.WachtOpTelling:
                 VerwerkTelling(gesprokenTekst);
-                break;
+                return true;
 
             case TerminalFase.Boot:
             case TerminalFase.Inactief:
-                break;
+                return false;
 
             case TerminalFase.HackVoltooid:
             case TerminalFase.TellingVoltooid:
                 if (terminalDisplay != null)
                     terminalDisplay.ToonMetCursor(">_ SYSTEM ALREADY COMPROMISED\n>_ DOOR UNLOCKED");
-                break;
+                return true;
         }
+        return false;
     }
 
-    private void VerwerkHackMinigame(string text)
+    private bool VerwerkHackMinigame(string text)
     {
         if (hackMinigame == null)
         {
             VerwerkLegacyStap(text);
-            return;
+            return true;
         }
 
-        if (hackMinigame.IsVoltooid()) return;
+        if (hackMinigame.IsVoltooid()) return true;
 
         string lower = text.ToLower().Trim();
 
@@ -272,7 +272,7 @@ public class TerminalHacker : MonoBehaviour
                 else
                     ToonHackGrid();
             }
-            return;
+            return true;
         }
 
         int result = hackMinigame.SelecteerWoord(text);
@@ -282,25 +282,25 @@ public class TerminalHacker : MonoBehaviour
             if (terminalUI != null)
                 terminalUI.ToonFout($">_ INVALID WORD: \"{text}\"\n>_ WOORD NIET GEVONDEN IN DATABASE");
             PlaySound(failSound);
-            return;
+            return false;
         }
 
         if (result == 100)
         {
             HackSuccess();
-            return;
+            return true;
         }
 
         if (result == -3)
         {
             HackFailed();
-            return;
+            return true;
         }
 
         if (result >= 0 && hackMinigame != null)
         {
             string correctWoord = hackMinigame.CorrectWoord();
-            string feedback = $">_ ACCESS DENIED\n>_ {text.ToUpper()} = {result}/{correctWoord.Length} MATCH\n>_ POGINGEN OVER: {hackMinigame.PogingenOver()}/{hackMinigame.MaxPogingen()}\n\n{hackMinigame.FormatWoordGrid()}";
+            string feedback = $">_ ACCESS DENIED\n>_ {text.ToUpper()} = {result}/{correctWoord.Length} MATCH\n>_ TRIES LEFT: {hackMinigame.PogingenOver()}/{hackMinigame.MaxPogingen()}\n\n{hackMinigame.FormatWoordGrid()}";
 
             if (terminalDisplay != null)
                 terminalDisplay.ToonMetCursor(feedback, terminalUI != null ? terminalUI.foutKleur : Color.red);
@@ -309,6 +309,7 @@ public class TerminalHacker : MonoBehaviour
 
             PlaySound(failSound);
         }
+        return true;
     }
 
     private void VerwerkTelling(string text)

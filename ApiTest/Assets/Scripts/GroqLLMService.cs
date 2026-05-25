@@ -77,14 +77,19 @@ public class GroqLLMService : MonoBehaviour
 
     private IEnumerator SendToLLM(string roomContext, string playerInput, Action<LLMResult> onComplete)
     {
-        string availablePrefabs = "air_hockey_001,bathroom_item_001,bed_001,box_001,camera_001,closet_001,closet_002,clothes_001,clothes_002,coffee_machine_001,coffee_table_001,couch_001,door_001,door_frame_001,dresser_001,dish_001,dish_002,drink_001,drink_002,dumbbell_001,dumbbell_002,fridge_001,ketchup_001,kitchen_chair_001,kitchen_sink_001,kitchen_table_001,lamp_001,lamp_002,lounge_chair_001,microwave_oven_001,musical_instrument_001,office_table_001,plant_001,scratching_post_001,training_item_001,training_item_002,toy_001,toy_002,tv_wall_001,washing_machine_001";
+        GameObject[] allPrefabs = Resources.LoadAll<GameObject>("Props");
+        string availablePrefabs = "";
+        foreach (GameObject prefab in allPrefabs)
+        {
+            availablePrefabs += prefab.name + ",";
+        }
 
         string systemPrompt = "You are a morphing AI in a stealth game. " +
                               "Rules: " +
                               "1) Score how well the object fits in the current location (0-100). Items that belong there=high, out of place=low. " +
                               "Vague/no object: score=0, prefab_name='none'. " +
-                              $"2)op Map object to prefab name from list: [{availablePrefabs}]. " +
-                              "chair/office chair/seat → lounge_chair_001. server/cabinet → closet_001 or closet_002. box/crate → box_001. " +
+                               $"2) Pick the BEST MATCHING prefab name from this list ONLY: [{availablePrefabs}]. " +
+                               "Return the exact prefab name as-is. " +
                               "3) door_action='none' unless 'open/close the door'. " +
                               "4) unmorph=true if player says 'unmorph/turn me back/revert/change me back/undo'. " +
                               "Output JSON only: {{\"score\":0,\"reason\":\"\",\"prefab_name\":\"\",\"door_action\":\"none\",\"unmorph\":false}}";
