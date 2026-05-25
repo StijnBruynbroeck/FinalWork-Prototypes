@@ -6,7 +6,7 @@ using System;
 public class MicrophoneRecorder : MonoBehaviour
 {
     [Header("Audio Settings")]
-    public int recordingFrequency = 44100;
+    public int recordingFrequency = 16000;
     public int maxRecordingLength = 30;
 
     private AudioClip recordedClip;
@@ -14,7 +14,7 @@ public class MicrophoneRecorder : MonoBehaviour
     private int lastSamplePosition = 0;
     private bool isRecording = false;
 
-    public bool IsRecording => isRecording; // Handig voor andere scripts om te weten
+    public bool IsRecording => isRecording;
 
     void Start()
     {
@@ -38,7 +38,6 @@ public class MicrophoneRecorder : MonoBehaviour
         recordedClip = Microphone.Start(microphoneDevice, false, maxRecordingLength, recordingFrequency);
     }
 
-    // We gebruiken een 'Callback' (Action) om de data terug te geven als hij klaar is
     public void StopRecording(Action<byte[]> onAudioReady)
     {
         if (!isRecording) return;
@@ -59,8 +58,7 @@ public class MicrophoneRecorder : MonoBehaviour
 
         if (recordedClip == null || lastSamplePosition <= 0)
         {
-            // Fallback als positie 0 is
-            if(recordedClip != null) lastSamplePosition = recordedClip.samples;
+                if(recordedClip != null) lastSamplePosition = recordedClip.samples;
             else 
             {
                 Debug.LogError("Opname mislukt");
@@ -81,31 +79,64 @@ public class MicrophoneRecorder : MonoBehaviour
         Destroy(recordedClip);
         recordedClip = null;
 
-        // Geef de data terug aan de 'baas' (Controller)
         onAudioReady?.Invoke(audioData);
     }
 
     private byte[] ConvertToWAV(float[] samples, int channels, int frequency)
     {
+        float[] mono;
+        int finalChannels;
+        if (channels > 1)
+        {
+            int sampleCount = samples.Length / channels;
+            mono = new float[sampleCount];
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float sum = 0f;
+                for (int c = 0; c < channels; c++)
+                    sum += samples[i * channels + c];
+                mono[i] = sum / channels;
+            }
+            finalChannels = 1;
+        }
+        else
+        {
+            mono = samples;
+            finalChannels = channels;
+        }
+
         using (MemoryStream stream = new MemoryStream())
         using (BinaryWriter writer = new BinaryWriter(stream))
         {
             writer.Write("RIFF".ToCharArray());
-            writer.Write(36 + samples.Length * 2);
+            writer.Write(36 + mono.Length * 2);
             writer.Write("WAVE".ToCharArray());
             writer.Write("fmt ".ToCharArray());
             writer.Write(16);
             writer.Write((short)1);
-            writer.Write((short)channels);
+            writer.Write((short)finalChannels);
             writer.Write(frequency);
-            writer.Write(frequency * channels * 2);
-            writer.Write((short)(channels * 2));
+            writer.Write(frequency * finalChannels * 2);
+            writer.Write((short)(finalChannels * 2));
             writer.Write((short)16);
             writer.Write("data".ToCharArray());
-            writer.Write(samples.Length * 2);
+            writer.Write(mono.Length * 2);
 
-            foreach (var sample in samples) writer.Write((short)(sample * short.MaxValue));
+            foreach (var sample in mono) writer.Write((short)(sample * short.MaxValue));
             return stream.ToArray();
+        }
+    }
+
+    void OnDisable()
+    {
+        if (isRecording && microphoneDevice != null)
+        {
+            if (Microphone.IsRecording(microphoneDevice))
+            {
+                Microphone.End(microphoneDevice);
+                Debug.Log("Microfoon netjes afgesloten door OnDisable.");
+            }
+            isRecording = false;
         }
     }
 }

@@ -1,74 +1,109 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[System.Serializable]
-public struct VoiceObject
-{
-    public string objectName;
-    public string[] keywords;
-    public GameObject prefab;
-}
-
 public class ObjectSpawner : MonoBehaviour
 {
-    [Header("Mijn ItHappy Objecten")]
-    public List<VoiceObject> spawnableObjects;
+    [Header("Player Morphing")]
+    public Transform playerTransform;
+    public GameObject playerVisuals;
+    
+    private GameObject currentProp;
+    private bool isMorphed = false;
 
-    public void ProcessTextAndSpawn(string text, System.Action<string> onStatusUpdate)
+    [Header("AI & Logic")]
+    public NeuroFilterAI enemyAI; 
+
+    public bool IsMorphed => isMorphed;
+    public GameObject CurrentProp => currentProp;
+
+    public void ProcessTextAndSpawn(LLMResult aiResult, System.Action<string> onStatusUpdate)
     {
-        string command = text.ToLower();
-        Debug.Log("Analyseren: " + command);
+        onStatusUpdate?.Invoke("Score: " + aiResult.score + "/100. " + aiResult.reason);
+        
+        string prefabName = string.IsNullOrEmpty(aiResult.prefab_name) ? "none" : aiResult.prefab_name;
+        Debug.Log("AI selecteerde object: " + prefabName);
 
-        // 1. Kleur bepalen
-        Color objectColor = Color.white;
-        bool colorFound = false;
-
-        if (command.Contains("rood") || command.Contains("red")) { objectColor = Color.red; colorFound = true; }
-        else if (command.Contains("blauw") || command.Contains("blue")) { objectColor = Color.blue; colorFound = true; }
-        else if (command.Contains("groen") || command.Contains("green")) { objectColor = Color.green; colorFound = true; }
-        else if (command.Contains("geel") || command.Contains("yellow")) { objectColor = Color.yellow; colorFound = true; }
-        else if (command.Contains("zwart") || command.Contains("black")) { objectColor = Color.black; colorFound = true; }
-
-        // 2. Zoeken in lijst
-        foreach (var item in spawnableObjects)
+        if (prefabName.ToLower() == "none")
         {
-            foreach (string keyword in item.keywords)
-            {
-                if (command.Contains(keyword.ToLower()))
-                {
-                    SpawnPrefab(item.prefab, objectColor, colorFound);
-                    onStatusUpdate?.Invoke($"Spawned: {item.objectName}");
-                    return;
-                }
-            }
+            onStatusUpdate?.Invoke("Transformatie mislukt: Object niet in database.");
+            return;
         }
 
-        onStatusUpdate?.Invoke("Object niet herkend.");
-    }
+        GameObject loadedPrefab = Resources.Load<GameObject>("Props/" + prefabName);
 
-    private void SpawnPrefab(GameObject prefab, Color color, bool applyColor)
-    {
-        if (prefab == null) return;
-
-        GameObject obj = Instantiate(prefab);
-
-        if (Camera.main != null)
+        if (loadedPrefab != null)
         {
-            Transform cam = Camera.main.transform;
-            obj.transform.position = cam.position + (cam.forward * 2f);
-            obj.transform.LookAt(new Vector3(cam.position.x, obj.transform.position.y, cam.position.z));
+            if (currentProp != null)
+            {
+                Destroy(currentProp);
+            }
+
+            currentProp = Instantiate(loadedPrefab, playerTransform);
+            currentProp.transform.localPosition = Vector3.zero;
+            currentProp.transform.localRotation = Quaternion.identity;
+
+            if (playerVisuals != null)
+            {
+                Renderer rend = playerVisuals.GetComponentInChildren<Renderer>();
+                if (rend != null) rend.enabled = false;
+            }
+
+            if (currentProp != null)
+            {
+                PlayerMovement pm = playerTransform.GetComponent<PlayerMovement>();
+                if (pm != null)
+                {
+                    pm.SwitchCamera(false);
+                    pm.enabled = false;
+                }
+
+                CharacterController cc = playerTransform.GetComponent<CharacterController>();
+                if (cc != null)
+                {
+                    cc.enabled = false;
+                }
+
+                isMorphed = true;
+            }
+
+            onStatusUpdate?.Invoke("Succes! Getransformeerd in " + prefabName + "!");
         }
         else
         {
-            obj.transform.position = new Vector3(0, 0, 2f);
-        }
-
-        if (obj.GetComponent<Rigidbody>() == null) obj.AddComponent<Rigidbody>();
-
-        if (applyColor)
-        {
-            Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
-            foreach (Renderer r in renderers) r.material.color = color;
+            onStatusUpdate?.Invoke("Error: Prefab '" + prefabName + "' niet gevonden in de map.");
+            Debug.LogError("Resources.Load faalde voor bestand: Props/" + prefabName + ".");
         }
     }
+
+    public void Unmorph()
+    {
+        if (!isMorphed || currentProp == null) return;
+
+        Destroy(currentProp);
+        currentProp = null;
+
+        if (playerVisuals != null)
+        {
+            Renderer rend = playerVisuals.GetComponentInChildren<Renderer>();
+            if (rend != null) rend.enabled = true;
+        }
+
+        PlayerMovement pm = playerTransform.GetComponent<PlayerMovement>();
+        if (pm != null)
+        {
+            pm.enabled = true;
+            pm.SwitchCamera(true);
+        }
+
+        CharacterController cc = playerTransform.GetComponent<CharacterController>();
+        if (cc != null)
+        {
+            cc.enabled = true;
+        }
+
+        isMorphed = false;
+        Debug.Log("Unmorph: Terug naar menselijk formulier!");
+    }
+
+
 }
