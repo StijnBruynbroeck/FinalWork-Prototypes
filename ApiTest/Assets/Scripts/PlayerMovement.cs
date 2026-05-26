@@ -9,22 +9,25 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController controller;
     private Camera firstPersonCamera;
     private Camera thirdPersonCamera;
-    private float xRotation = 0f;
+    private Vector3 thirdPersonCameraOffset;
+    private float pitch;
+    private float yaw;
     private bool isFirstPerson = true;
+    private bool morphMode = false;
 
     void Start()
     {
         controller = GetComponentInChildren<CharacterController>();
         
         var cameras = GetComponentsInChildren<Camera>();
-        string camNames = "";
         foreach (var cam in cameras)
         {
-            camNames += cam.gameObject.name + ", ";
             if (cam.gameObject.name.Equals("FirstpersonCamera", System.StringComparison.OrdinalIgnoreCase)) firstPersonCamera = cam;
             else if (cam.gameObject.name.Equals("ThirdpersonCamera", System.StringComparison.OrdinalIgnoreCase)) thirdPersonCamera = cam;
         }
-        Debug.Log($"Camera's gevonden op player: [{camNames}] fp={(firstPersonCamera != null ? firstPersonCamera.gameObject.name : "null")} tp={(thirdPersonCamera != null ? thirdPersonCamera.gameObject.name : "null")}");
+
+        if (thirdPersonCamera != null)
+            thirdPersonCameraOffset = thirdPersonCamera.transform.localPosition;
 
         Cursor.lockState = CursorLockMode.Locked;
         SwitchCamera(true);
@@ -37,8 +40,13 @@ public class PlayerMovement : MonoBehaviour
         if (Keyboard.current.pKey.wasPressedThisFrame)
         {
             isFirstPerson = !isFirstPerson;
-            Debug.Log($"P pressed, switching to {(isFirstPerson ? "first" : "third")} person. cams: fp={firstPersonCamera?.name}, tp={thirdPersonCamera?.name}");
             SwitchCamera(isFirstPerson);
+        }
+
+        if (morphMode)
+        {
+            HandleMorphLook();
+            return;
         }
 
         float horizontal = 0f;
@@ -63,17 +71,54 @@ public class PlayerMovement : MonoBehaviour
 
         if (isFirstPerson && firstPersonCamera != null)
         {
-            xRotation -= mouseY;
-            xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-
-            firstPersonCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+            pitch -= mouseY;
+            pitch = Mathf.Clamp(pitch, -90f, 90f);
+            firstPersonCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
 
         transform.Rotate(Vector3.up * mouseX);
     }
 
+    private void HandleMorphLook()
+    {
+        if (Mouse.current == null) return;
+
+        Vector2 mouseDelta = Mouse.current.delta.ReadValue();
+        yaw += mouseDelta.x * mouseSensitivity * Time.deltaTime;
+        pitch -= mouseDelta.y * mouseSensitivity * Time.deltaTime;
+        pitch = Mathf.Clamp(pitch, -30f, 60f);
+
+        if (isFirstPerson && firstPersonCamera != null)
+        {
+            firstPersonCamera.transform.localRotation = Quaternion.Euler(pitch, yaw, 0f);
+        }
+        else if (!isFirstPerson && thirdPersonCamera != null)
+        {
+            Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);
+            thirdPersonCamera.transform.localPosition = orbit * thirdPersonCameraOffset;
+            thirdPersonCamera.transform.LookAt(transform.position);
+        }
+    }
+
+    public void SetMorphMode(bool active)
+    {
+        morphMode = active;
+        if (active)
+        {
+            isFirstPerson = false;
+            pitch = 0f;
+            yaw = 0f;
+            SwitchCamera(false);
+        }
+        else
+        {
+            SwitchCamera(true);
+        }
+    }
+
     public void SwitchCamera(bool firstPerson)
     {
+        isFirstPerson = firstPerson;
         if (firstPersonCamera != null) firstPersonCamera.enabled = firstPerson;
         if (thirdPersonCamera != null) thirdPersonCamera.enabled = !firstPerson;
     }

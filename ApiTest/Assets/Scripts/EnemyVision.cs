@@ -20,6 +20,7 @@ public class EnemyVision : MonoBehaviour
     private float currentSuspicionMultiplier = 1f;
     private float currentSuspicion = 0f;
     private int lastLLMScore = 0;
+    private float zoneFitFactor = 1f;
     
     public float CurrentSuspicion => currentSuspicion;
     public bool IsPlayerInSight { get; private set; }
@@ -109,7 +110,16 @@ public class EnemyVision : MonoBehaviour
     {
         if (IsPlayerInSight)
         {
-            currentSuspicion += (suspicionRate * currentSuspicionMultiplier) * Time.deltaTime;
+            float effectiveMultiplier = currentSuspicionMultiplier;
+
+            // Zone fit penalty: object doesn't belong here → override Even frozen suspicion
+            if (zoneFitFactor < 1f)
+            {
+                float zonePenalty = (1f - zoneFitFactor) * 4f;
+                effectiveMultiplier = Mathf.Max(effectiveMultiplier, zonePenalty);
+            }
+
+            currentSuspicion += (suspicionRate * effectiveMultiplier) * Time.deltaTime;
         }
         else
         {
@@ -117,6 +127,11 @@ public class EnemyVision : MonoBehaviour
         }
         
         currentSuspicion = Mathf.Clamp(currentSuspicion, 0f, 100f);
+    }
+
+    public void SetZoneFitFactor(float factor)
+    {
+        zoneFitFactor = Mathf.Clamp01(factor);
     }
  public void SetLLMScoreMultiplier(int llmScore)
     {

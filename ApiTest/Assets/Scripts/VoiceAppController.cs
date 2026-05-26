@@ -144,20 +144,54 @@ public class VoiceAppController : MonoBehaviour
     {
         if (string.IsNullOrWhiteSpace(text)) return;
 
-        lastSpokenText = text;
-        if (resultText != null) resultText.text = text;
+        string cleaned = text.Trim();
+        lastSpokenText = cleaned;
+        if (resultText != null) resultText.text = cleaned;
+
+        // --- 0. PRE-FILTER: reject known noise / garbage transcriptions ---
+        string lower = cleaned.ToLower();
+        string[] noiseMarkers = { "[blank_audio]", "[inaudible]", "[silence]", "[noise]", "[music]", "[cough]" };
+        foreach (var marker in noiseMarkers)
+        {
+            if (lower.Contains(marker))
+            {
+                UpdateStatus("Niet verstaan — probeer opnieuw.");
+                return;
+            }
+        }
+        if (lower.Length < 4)
+        {
+            UpdateStatus("Te kort — probeer opnieuw.");
+            return;
+        }
+
+        // --- 0b. PRE-LLM UNMORPH CHECK (catch Whisper mishearings like "on morph" → unmorph) ---
+        if (spawner != null && spawner.IsMorphed)
+        {
+            string[] unmorphPatterns = { "unmorph", "on morph", "unmorpf", "unmorf", "a morph",
+                                         "morph back", "change back", "turn back", "revert", "undo", "stop morph" };
+            foreach (var pattern in unmorphPatterns)
+            {
+                if (lower.Contains(pattern))
+                {
+                    spawner.Unmorph();
+                    UpdateStatus("Unmorphed! Terug naar menselijk formulier.");
+                    return;
+                }
+            }
+        }
 
         // --- 1. DIRECT DEUR COMMANDO ---
-        if (RouteerNaarDeur(text)) return;
+        if (RouteerNaarDeur(cleaned)) return;
 
         // --- 2. TERMINAL CHECK (actieve terminal waar speler bij staat) ---
-        if (RouteerNaarTerminal(text)) return;
+        if (RouteerNaarTerminal(cleaned)) return;
 
         // --- 3. NIEUWE PUZZEL CHECK ---
         VoiceRiddlePuzzle nieuwePuzzel = FindObjectOfType<VoiceRiddlePuzzle>();
         if (nieuwePuzzel != null && nieuwePuzzel.IsInRange && !nieuwePuzzel.IsCompleted)
         {
-            nieuwePuzzel.ProcessVoiceInput(text);
+            nieuwePuzzel.ProcessVoiceInput(cleaned);
             return;
         }
 
@@ -171,7 +205,7 @@ public class VoiceAppController : MonoBehaviour
         Debug.Log($"[VoiceApp] HUIDIGE ZONE CONTEXT: {currentRoom}");
 
         // --- 5. LLM BEOORDELING ---
-        llmService.EvaluatePlausibility(currentRoom, text, (llmResult) =>
+        llmService.EvaluatePlausibility(currentRoom, cleaned, (llmResult) =>
         {
             timer.Stop();
             long latencyMs = timer.ElapsedMilliseconds;
@@ -203,7 +237,31 @@ public class VoiceAppController : MonoBehaviour
                 return;
             }
 
-            // --- 5c. SPAWN OBJECT ---
+            // --- 5c. KEYWORD FALLBACK (catch LLM flaking out with empty prefab) ---
+            if (string.IsNullOrEmpty(llmResult.prefab_name) || llmResult.prefab_name.ToLower() == "none")
+            {
+                string fallback = TryKeywordFallback(cleaned);
+                if (!string.IsNullOrEmpty(fallback))
+                {
+                    Debug.Log($"[VoiceApp] LLM returned empty, keyword fallback → {fallback}");
+                    llmResult.prefab_name = fallback;
+                }
+            }
+
+            // --- 5d. VALIDATE PREFAB EXISTS before spawning ---
+            if (!string.IsNullOrEmpty(llmResult.prefab_name) && llmResult.prefab_name.ToLower() != "none")
+            {
+                GameObject prefab = Resources.Load<GameObject>("Props/" + llmResult.prefab_name);
+                if (prefab == null)
+                {
+                    UpdateStatus($"Object '{llmResult.prefab_name}' bestaat niet — geweigerd.");
+                    if (analytics != null)
+                        analytics.LogData(lastSpokenText, "none", 0, latencyMs);
+                    return;
+                }
+            }
+
+            // --- 5d. SPAWN OBJECT ---
             spawner.ProcessTextAndSpawn(llmResult, UpdateStatus);
 
             // --- 6. VIJAND MULTIPLIER ---
@@ -344,6 +402,22 @@ public class VoiceAppController : MonoBehaviour
             }
         }
         return closest;
+    }
+
+    private string TryKeywordFallback(string text)
+    {
+        string lower = text.ToLower();
+        if (lower.Contains("bed") || lower.Contains("cot") || lower.Contains("bad")) return "Bed01";
+        if (lower.Contains("table") || lower.Contains("desk")) return "Table01";
+        if (lower.Contains("chair") || lower.Contains("seat") || lower.Contains("cheer")) return "Chair01";
+        if (lower.Contains("office") && (lower.Contains("chair") || lower.Contains("seat"))) return "OfficeChair";
+        if (lower.Contains("couch") || lower.Contains("sofa")) return "Sofa01";
+        if (lower.Contains("closet") || lower.Contains("cabinet") || lower.Contains("locker") || lower.Contains("wardrobe") || lower.Contains("kast")) return "Closet01";
+        if (lower.Contains("bath") || lower.Contains("tub") || lower.Contains("bathtub") || lower.Contains("bass")) return "BathTub01";
+        if (lower.Contains("cushion") || lower.Contains("pillow")) return "Cushion01";
+        if (lower.Contains("drawer") || lower.Contains("chest")) return "Drawer01";
+        if (lower.Contains("bench") || lower.Contains("bunch")) return "Bench";
+        return null;
     }
 
     void UpdateStatus(string status)

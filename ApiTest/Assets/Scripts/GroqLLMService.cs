@@ -86,12 +86,16 @@ public class GroqLLMService : MonoBehaviour
 
         string systemPrompt = "You are a morphing AI in a stealth game. " +
                               "Rules: " +
-                              "1) Score how well the object fits in the current location (0-100). Items that belong there=high, out of place=low. " +
-                              "Vague/no object: score=0, prefab_name='none'. " +
-                               $"2) Pick the BEST MATCHING prefab name from this list ONLY: [{availablePrefabs}]. " +
-                               "Return the exact prefab name as-is. " +
-                              "3) door_action='none' unless 'open/close the door'. " +
-                              "4) unmorph=true if player says 'unmorph/turn me back/revert/change me back/undo'. " +
+                              "1) Score how well the object fits in the current location (0-100). Items that belong there=high, out of place=low. Score is ONLY about zone fit, not about whether to morph. " +
+                              "2) If the input is unclear, garbled, too short, or does NOT clearly request a morph → score=0, prefab_name='none'. NO EXCEPTIONS. " +
+                               $"3) Only pick a prefab from this list if the input CLEARLY names a piece of furniture: [{availablePrefabs}]. " +
+                               "Use common sense: 'bed'/'bad'/'cot' → Bed01. 'table'/'desk'/'bureau' → Table01. " +
+                              "'chair'/'seat'/'cheer' → Chair01 or OfficeChair. 'couch'/'sofa' → Sofa01. " +
+                              "'closet'/'cabinet'/'locker'/'wardrobe' → Closet01. 'bath'/'tub'/'bathtub'/'bass' → BathTub01. " +
+                              "'cushion'/'pillow' → Cushion01. 'drawer'/'chest' → Drawer01. 'bench'/'bunch' → Bench. " +
+                              "Return the exact prefab name from the list. NEVER return an empty string. " +
+                              "4) door_action='none' unless the player says 'open/close the door'. " +
+                              "5) unmorph=true if player says 'unmorph/on morph/turn me back/revert/change me back/undo/morph back'. " +
                               "Output JSON only: {{\"score\":0,\"reason\":\"\",\"prefab_name\":\"\",\"door_action\":\"none\",\"unmorph\":false}}";
 
         string userPrompt = $"Current location: {roomContext}. The player says: '{playerInput}'";
