@@ -10,6 +10,8 @@ public class GroqLLMService : MonoBehaviour
     public string apiKey = "ollama"; // Geen echte key nodig lokaal
     private string localEndpoint = "http://localhost:11434/v1/chat/completions";
 
+    private static string cachedPrefabList = null;
+
     public void EvaluatePlausibility(string roomContext, string playerInput, Action<LLMResult> onComplete)
     {
         StartCoroutine(SendToLLM(roomContext, playerInput, onComplete));
@@ -37,8 +39,10 @@ public class GroqLLMService : MonoBehaviour
 
         GroqChatRequest chatRequest = new GroqChatRequest
         {
-            model = "llama3",
+            model = "phi3:mini",
             response_format = new ResponseFormat { type = "json_object" },
+            temperature = 0.0f,
+            max_tokens = 100,
             messages = new RequestMessage[]
             {
                 new RequestMessage { role = "system", content = systemPrompt },
@@ -77,12 +81,14 @@ public class GroqLLMService : MonoBehaviour
 
     private IEnumerator SendToLLM(string roomContext, string playerInput, Action<LLMResult> onComplete)
     {
-        GameObject[] allPrefabs = Resources.LoadAll<GameObject>("Props");
-        string availablePrefabs = "";
-        foreach (GameObject prefab in allPrefabs)
+        if (cachedPrefabList == null)
         {
-            availablePrefabs += prefab.name + ",";
+            GameObject[] allPrefabs = Resources.LoadAll<GameObject>("Props");
+            cachedPrefabList = "";
+            foreach (GameObject prefab in allPrefabs)
+                cachedPrefabList += prefab.name + ",";
         }
+        string availablePrefabs = cachedPrefabList;
 
         string systemPrompt = "You are a morphing AI in a stealth game. " +
                               "Rules: " +
@@ -103,8 +109,10 @@ public class GroqLLMService : MonoBehaviour
 
         GroqChatRequest chatRequest = new GroqChatRequest
         {
-            model = "llama3",
+            model = "phi3:mini",
             response_format = new ResponseFormat { type = "json_object" },
+            temperature = 0.0f,
+            max_tokens = 100,
             messages = new RequestMessage[]
             {
                 new RequestMessage { role = "system", content = systemPrompt },
@@ -188,7 +196,7 @@ public class GroqLLMService : MonoBehaviour
     }
 }
 
-[Serializable] public class GroqChatRequest { public string model; public ResponseFormat response_format; public RequestMessage[] messages; }
+[Serializable] public class GroqChatRequest { public string model; public ResponseFormat response_format; public float temperature; public int max_tokens; public RequestMessage[] messages; }
 [Serializable] public class ResponseFormat { public string type; }
 [Serializable] public class RequestMessage { public string role; public string content; }
 

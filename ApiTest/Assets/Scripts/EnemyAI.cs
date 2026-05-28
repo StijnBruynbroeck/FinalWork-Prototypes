@@ -118,6 +118,12 @@ public class EnemyAI : MonoBehaviour
         if (distance <= effectiveRange && currentState != EnemyState.Chase)
         {
             investigationPoint = soundPosition;
+
+            // Cancel morph inspect if active — sound takes priority
+            inspectArrived = false;
+            inspectTimer = 0f;
+            agent.isStopped = false;
+
             SetState(EnemyState.Investigate);
             Debug.Log($"🔊 Vijand hoort geluid op {soundPosition} (afstand: {distance})");
         }
@@ -439,27 +445,25 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            // Normaal onderzoek naar geluid
-            if (!agent.hasPath || agent.remainingDistance < 0.5f)
+            // Normaal onderzoek naar geluid — altijd naar geluidsbron gaan
+            float distToSound = Vector3.Distance(transform.position, investigationPoint);
+            if (distToSound > 1f)
             {
-                if (Vector3.Distance(transform.position, investigationPoint) > 1f)
+                agent.SetDestination(investigationPoint);
+            }
+            else
+            {
+                // Aangekomen bij geluidsbron, kijk even rond
+                investigateTimer += Time.deltaTime;
+                
+                // Draai langzaam rond om te zoeken
+                transform.Rotate(0, 60f * Time.deltaTime, 0);
+                
+                if (investigateTimer >= investigateWaitTime)
                 {
-                    agent.SetDestination(investigationPoint);
-                }
-                else
-                {
-                    // Aangekomen bij geluidsbron, kijk even rond
-                    investigateTimer += Time.deltaTime;
-                    
-                    // Draai langzaam rond om te zoeken
-                    transform.Rotate(0, 60f * Time.deltaTime, 0);
-                    
-                    if (investigateTimer >= investigateWaitTime)
-                    {
-                        investigateTimer = 0f;
-                        SetState(EnemyState.Roam);
-                        Debug.Log("🔍 Onderzoek voltooid, terug naar patrouilleren");
-                    }
+                    investigateTimer = 0f;
+                    SetState(EnemyState.Roam);
+                    Debug.Log("🔍 Onderzoek voltooid, terug naar patrouilleren");
                 }
             }
         }
@@ -509,12 +513,17 @@ public class EnemyAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Checks whether the player's current morph object fits in the current zone
-    /// using zoneType categories (matching what the LLM would judge).
+    /// Checks whether the player's current morph object fits in the current zone.
+    /// If the LLM already scored ≥80 (perfect disguise), trust it and return 1f.
+    /// Otherwise use the hardcoded zoneType heuristic as fallback.
     /// </summary>
     private float EvaluateMorphZoneFit()
     {
         if (playerSpawner == null || !playerSpawner.IsMorphed || string.IsNullOrEmpty(playerSpawner.CurrentPrefabName))
+            return 1f;
+
+        // LLM already judged this disguise as perfect — trust it, skip hardcoded heuristic
+        if (vision != null && vision.IsPlayerWellDisguised)
             return 1f;
 
         if (zoneDetection == null || zoneDetection.CurrentZone == null)
