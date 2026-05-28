@@ -33,8 +33,12 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private Text detectionText;
     [SerializeField] private Renderer enemyRenderer;
     
+    [Header("Chase")]
+    [SerializeField] private float chaseLostTimeout = 5f;
+
     [Header("Morph Inspection")]
     [SerializeField] private float inspectDuration = 2f;
+    [SerializeField] private float inspectApproachDistance = 4f;
     [SerializeField] private float postInspectCooldown = 4f;
     [SerializeField] private float fleeDistance = 15f;
 
@@ -64,8 +68,11 @@ public class EnemyAI : MonoBehaviour
     private float investigateTimer = 0f;
     private float inspectTimer = 0f;
     private float postInspectTimer = 0f;
+    private float chaseLostTimer = 0f;
     private Vector3 morphInspectStartPos;
     private bool inspectArrived = false;
+    private bool hasInspectedThisMorph = false;
+    private Animator animator;
     private ObjectSpawner playerSpawner;
     private ZoneDetectionManager zoneDetection;
     
@@ -78,15 +85,17 @@ public class EnemyAI : MonoBehaviour
             baseSpeed = agent.speed;
         
         agent.speed = GetBaseSpeed();
+        agent.stoppingDistance = 1f;
+
+        animator = GetComponent<Animator>();
         
         // Subscribe to audio events
         AudioEventSystem.OnSoundEmitted += HandleAudioEvent;
         
-        // Find player's ObjectSpawner
-        if (vision != null && vision.Player != null)
-        {
-            playerSpawner = vision.Player.GetComponentInParent<ObjectSpawner>();
-        }
+        // Find ObjectSpawner in the scene (not a parent of the player)
+        playerSpawner = FindObjectOfType<ObjectSpawner>();
+        if (playerSpawner == null)
+            Debug.LogWarning("[EnemyAI] Geen ObjectSpawner gevonden in scene");
 
         zoneDetection = FindObjectOfType<ZoneDetectionManager>();
         if (zoneDetection == null)
@@ -154,16 +163,29 @@ public class EnemyAI : MonoBehaviour
             vision.SetZoneFitFactor(1f);
         }
 
-        if (canSeePlayer && playerWellDisguised && currentState != EnemyState.Investigate)
+        // Reset inspect-once flag when player unmorphs (next morph can be inspected)
+        if (!playerMorphed)
+            hasInspectedThisMorph = false;
+
+        // State selection: well-disguised players never trigger Chase
+        if (canSeePlayer && playerMorphed && playerWellDisguised && !hasInspectedThisMorph)
         {
-            // Speler is goed vermomd - inspecteer even en ga dan weg
-            SetState(EnemyState.Investigate);
-            morphInspectStartPos = vision.Player.position;
-            inspectArrived = false;
-            investigateTimer = 0f;
-            inspectTimer = 0f;
+            if (postInspectTimer <= 0f && currentState != EnemyState.Investigate)
+            {
+                // Go inspect the object
+                SetState(EnemyState.Investigate);
+                morphInspectStartPos = vision.Player.position;
+                inspectArrived = false;
+                investigateTimer = 0f;
+                inspectTimer = 0f;
+            }
+            else if (currentState == EnemyState.Chase)
+            {
+                // Well-disguised but stuck in Chase — reset to Roam
+                SetState(EnemyState.Roam);
+            }
         }
-        else if (canSeePlayer || playerInRange)
+        else if ((canSeePlayer || playerInRange) && (!playerMorphed || !playerWellDisguised))
         {
             if (currentState != EnemyState.Chase)
                 SetState(EnemyState.Chase);
@@ -177,6 +199,34 @@ public class EnemyAI : MonoBehaviour
             // Already roaming, nothing to do
         }
         
+        // Chase-lost timer: give up after losing sight for chaseLostTimeout
+        if (currentState == EnemyState.Chase)
+        {
+            if (!canSeePlayer)
+            {
+                chaseLostTimer += Time.deltaTime;
+                if (chaseLostTimer >= chaseLostTimeout)
+                {
+                    chaseLostTimer = 0f;
+                    SetState(EnemyState.Roam);
+                }
+            }
+            else
+            {
+                chaseLostTimer = 0f;
+            }
+        }
+        else
+        {
+            chaseLostTimer = 0f;
+        }
+        
+        // Decrease post-inspect cooldown in any state (not just Roam)
+        if (postInspectTimer > 0f)
+        {
+            postInspectTimer -= Time.deltaTime;
+        }
+        
         if (currentState == EnemyState.Chase && currentSuspicion > minSuspicion)
         {
             HandleSuspectState(currentSuspicion);
@@ -185,6 +235,16 @@ public class EnemyAI : MonoBehaviour
         {
             agent.speed = GetBaseSpeed() * 1.2f;
         }
+
+        // Unmorphed player in sight: pump suspicion fast
+        if (canSeePlayer && playerSpawner != null && !playerSpawner.IsMorphed && currentState == EnemyState.Chase)
+        {
+            vision.AddSuspicion(20f * Time.deltaTime);
+        }
+        
+        // Push animation speed parameter
+        if (animator != null)
+            animator.SetFloat("Speed", agent.velocity.magnitude);
         
         ExecuteState();
     }
@@ -222,12 +282,6 @@ public class EnemyAI : MonoBehaviour
     {
         agent.speed = GetBaseSpeed();
 
-        // Post-inspection cooldown — don't re-investigate the same area immediately
-        if (postInspectTimer > 0f)
-        {
-            postInspectTimer -= Time.deltaTime;
-        }
-        
         if (roamWaitTime > 0f)
         {
             roamWaitTime -= Time.deltaTime;
@@ -318,17 +372,27 @@ public class EnemyAI : MonoBehaviour
         
         // Check of we een gemorphte speler aan het inspecteren zijn
         bool inspectingMorphedPlayer = playerSpawner != null && playerSpawner.IsMorphed && vision.IsPlayerWellDisguised;
+
+        // Already inspected this morph — treat as normal sound investigation
+        if (inspectingMorphedPlayer && hasInspectedThisMorph)
+            inspectingMorphedPlayer = false;
         
         if (inspectingMorphedPlayer)
         {
-            // FIX: Loop naar de VASTGELEGDE positie, niet de bewegende speler
             if (!inspectArrived)
             {
+                // Always set destination to player position
+                if (vision.Player != null)
+                    morphInspectStartPos = vision.Player.position;
+
                 agent.SetDestination(morphInspectStartPos);
 
-                if (Vector3.Distance(transform.position, morphInspectStartPos) < 2f)
+                // Simple straight-line distance check: stop when close enough
+                if (Vector3.Distance(transform.position, morphInspectStartPos) < inspectApproachDistance)
                 {
+                    agent.isStopped = true;
                     inspectArrived = true;
+                    Debug.Log("🪑 Inspect arrived, stopping");
                 }
             }
             else
@@ -336,8 +400,9 @@ public class EnemyAI : MonoBehaviour
                 // Aangekomen — inspecteer het object
                 inspectTimer += Time.deltaTime;
 
-                // Kijk rustig naar het object
-                Vector3 direction = (morphInspectStartPos - transform.position).normalized;
+                // Kijk rustig naar de gemorphte speler
+                Vector3 lookTarget = vision.Player != null ? vision.Player.position : morphInspectStartPos;
+                Vector3 direction = (lookTarget - transform.position).normalized;
                 direction.y = 0;
                 if (direction != Vector3.zero)
                 {
@@ -349,10 +414,26 @@ public class EnemyAI : MonoBehaviour
                 {
                     inspectTimer = 0f;
                     inspectArrived = false;
+                    hasInspectedThisMorph = true;
+
+                    // Walk away from the player
+                    SetState(EnemyState.Roam);
+                    Vector3 awayDir = vision.Player != null
+                        ? (transform.position - vision.Player.position).normalized
+                        : Vector3.forward;
+                    awayDir.y = 0;
+                    if (awayDir == Vector3.zero) awayDir = Vector3.forward;
+                    Vector3 fleePos = transform.position + awayDir * fleeDistance;
+
+                    // Reset agent path fully to break out of stopped state
+                    agent.isStopped = false;
+                    agent.ResetPath();
+                    agent.SetDestination(fleePos);
+
+                    hasRoamDestination = true;
+                    roamDestination = fleePos;
                     postInspectTimer = postInspectCooldown;
-                    // Na inspectie: loop weg van de speler
-                    SetRoamAwayFromPlayer();
-                    Debug.Log("🪑 Inspectie voorbij. Vijand loopt weg van de speler.");
+                    Debug.Log($"🪑 Inspectie voorbij. Vijand loopt weg naar {fleePos}");
                 }
             }
         }
@@ -401,6 +482,10 @@ public class EnemyAI : MonoBehaviour
             awayFromPlayer = transform.position + dirAway * fleeDistance;
         }
 
+        // MUST call SetState FIRST — it resets hasRoamDestination=false;
+        // we'll set it back to true below with the actual flee destination.
+        SetState(EnemyState.Roam);
+
         for (int i = 0; i < 5; i++)
         {
             Vector2 offset = UnityEngine.Random.insideUnitCircle * fleeDistance * 0.5f;
@@ -413,7 +498,6 @@ public class EnemyAI : MonoBehaviour
                 hasRoamDestination = true;
                 lastDestination = hit.position;
                 consecutiveSkips = 0;
-                SetState(EnemyState.Roam);
                 return;
             }
         }
@@ -422,12 +506,11 @@ public class EnemyAI : MonoBehaviour
         agent.SetDestination(awayFromPlayer);
         hasRoamDestination = true;
         roamDestination = awayFromPlayer;
-        SetState(EnemyState.Roam);
     }
 
     /// <summary>
-    /// Checks whether the player's current morph object fits in the current zone.
-    /// Returns 1f if it matches furnitureInZone, 0.25f if not.
+    /// Checks whether the player's current morph object fits in the current zone
+    /// using zoneType categories (matching what the LLM would judge).
     /// </summary>
     private float EvaluateMorphZoneFit()
     {
@@ -435,24 +518,26 @@ public class EnemyAI : MonoBehaviour
             return 1f;
 
         if (zoneDetection == null || zoneDetection.CurrentZone == null)
-            return 1f;
+            return 0.5f;
 
-        ZoneData zone = zoneDetection.CurrentZone;
-        if (zone.furnitureInZone == null || zone.furnitureInZone.Length == 0)
-            return 1f;
+        string morphName = playerSpawner.CurrentPrefabName.ToLower().Replace("_", "").Replace("01", "");
+        string zoneType = zoneDetection.CurrentZone.zoneType.ToLower();
 
-        string morphName = playerSpawner.CurrentPrefabName.ToLower();
+        bool fitsInKantoor = morphName.Contains("chair") || morphName.Contains("table") || morphName.Contains("desk")
+                           || morphName.Contains("sofa") || morphName.Contains("couch") || morphName.Contains("cushion")
+                           || morphName.Contains("bench") || morphName.Contains("drawer") || morphName.Contains("chest")
+                           || morphName.Contains("closet") || morphName.Contains("bed");
 
-        foreach (GameObject furniture in zone.furnitureInZone)
-        {
-            if (furniture == null) continue;
-            string furnitureName = furniture.name.ToLower().Replace("(clone)", "").Trim();
-            if (furnitureName.Contains(morphName) || morphName.Contains(furnitureName))
-                return 1f;
-        }
+        bool fitsInServerroom = morphName.Contains("closet") || morphName.Contains("cabinet") || morphName.Contains("locker")
+                              || morphName.Contains("drawer") || morphName.Contains("chest") || morphName.Contains("bench");
 
-        // Object doesn't belong in this zone — high suspicion penalty
-        return 0.25f;
+        if (zoneType.Contains("kantoor") || zoneType.Contains("office"))
+            return fitsInKantoor ? 1f : 0.25f;
+
+        if (zoneType.Contains("server"))
+            return fitsInServerroom ? 1f : 0.25f;
+
+        return 0.5f;
     }
 
     private void SetState(EnemyState newState)

@@ -133,7 +133,13 @@ public class EnemyVision : MonoBehaviour
     {
         zoneFitFactor = Mathf.Clamp01(factor);
     }
- public void SetLLMScoreMultiplier(int llmScore)
+
+    public void AddSuspicion(float amount)
+    {
+        currentSuspicion += amount;
+    }
+
+    public void SetLLMScoreMultiplier(int llmScore)
     {
         lastLLMScore = llmScore;
         
