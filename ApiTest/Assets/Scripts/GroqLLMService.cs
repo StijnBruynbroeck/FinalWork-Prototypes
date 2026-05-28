@@ -91,12 +91,12 @@ public class GroqLLMService : MonoBehaviour
                                $"3) Only pick a prefab from this list if the input CLEARLY names a piece of furniture: [{availablePrefabs}]. " +
                                "Use common sense: 'bed'/'bad'/'cot' → Bed01. 'table'/'desk'/'bureau' → Table01. " +
                               "'chair'/'seat'/'cheer' → Chair01 or OfficeChair. 'couch'/'sofa' → Sofa01. " +
-                              "'closet'/'cabinet'/'locker'/'wardrobe' → Closet01. 'bath'/'tub'/'bathtub'/'bass' → BathTub01. " +
+                              "'closet'/'cabinet'/'locker'/'wardrobe' → Closet01. 'bath'/'tub'/'bathtub' → BathTub01. " +
                               "'cushion'/'pillow' → Cushion01. 'drawer'/'chest' → Drawer01. 'bench'/'bunch' → Bench. " +
-                              "Return the exact prefab name from the list. NEVER return an empty string. " +
+                              "Return the exact prefab name from the list. If no furniture is requested, set prefab_name='none'. " +
                               "4) door_action='none' unless the player says 'open/close the door'. " +
-                              "5) unmorph=true if player says 'unmorph/on morph/turn me back/revert/change me back/undo/morph back'. " +
-                              "Output JSON only: {{\"score\":0,\"reason\":\"\",\"prefab_name\":\"\",\"door_action\":\"none\",\"unmorph\":false}}";
+                              "5) unmorph=true if player says 'unmorph/turn me back/revert/change me back/undo/morph back'. When unmorph is true, prefab_name MUST be 'none'. " +
+                              "Output JSON only: {{\"score\":0,\"reason\":\"\",\"prefab_name\":\"none\",\"door_action\":\"none\",\"unmorph\":false}}";
 
         string userPrompt = $"Current location: {roomContext}. The player says: '{playerInput}'";
         Debug.Log($"[LLM] VERSTUURD NAAR OLLAMA: {userPrompt}");

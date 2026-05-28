@@ -165,19 +165,41 @@ public class VoiceAppController : MonoBehaviour
             return;
         }
 
-        // --- 0b. PRE-LLM UNMORPH CHECK (catch Whisper mishearings like "on morph" → unmorph) ---
-        if (spawner != null && spawner.IsMorphed)
+        // --- 0a. TRANSCRIPTION CORRECTION (fix known Whisper mishearings) ---
+        bool corrected = false;
+        if (lower.Contains("bye ") && lower.Contains("bass"))
         {
-            string[] unmorphPatterns = { "unmorph", "on morph", "unmorpf", "unmorf", "a morph",
-                                         "morph back", "change back", "turn back", "revert", "undo", "stop morph" };
-            foreach (var pattern in unmorphPatterns)
+            cleaned = cleaned.Replace("Bye", "").Replace("bass", "bypass").Replace("bye", "bypass");
+            corrected = true;
+        }
+        if (lower.Contains("on morph"))
+        {
+            cleaned = "unmorph";
+            corrected = true;
+        }
+        if (corrected)
+        {
+            cleaned = cleaned.Trim().TrimEnd('.');
+            lower = cleaned.ToLower();
+        }
+
+        // --- 0b. PRE-LLM UNMORPH CHECK (always runs, regardless of morph state) ---
+        string[] unmorphPatterns = { "unmorph", "on morph", "unmorpf", "unmorf", "a morph",
+                                     "morph back", "change back", "turn back", "revert", "undo", "stop morph" };
+        foreach (var pattern in unmorphPatterns)
+        {
+            if (lower.Contains(pattern))
             {
-                if (lower.Contains(pattern))
+                if (spawner != null && spawner.IsMorphed)
                 {
                     spawner.Unmorph();
                     UpdateStatus("Unmorphed! Terug naar menselijk formulier.");
-                    return;
                 }
+                else
+                {
+                    UpdateStatus("Je bent al in menselijke vorm.");
+                }
+                return;
             }
         }
 
@@ -230,10 +252,17 @@ public class VoiceAppController : MonoBehaviour
             }
 
             // --- 5b. UNMORPH CHECK ---
-            if (llmResult.unmorph && spawner != null && spawner.IsMorphed)
+            if (llmResult.unmorph)
             {
-                spawner.Unmorph();
-                UpdateStatus("Unmorphed! Terug naar menselijk formulier.");
+                if (spawner != null && spawner.IsMorphed)
+                {
+                    spawner.Unmorph();
+                    UpdateStatus("Unmorphed! Terug naar menselijk formulier.");
+                }
+                else
+                {
+                    UpdateStatus("Je bent al in menselijke vorm.");
+                }
                 return;
             }
 
@@ -413,7 +442,7 @@ public class VoiceAppController : MonoBehaviour
         if (lower.Contains("office") && (lower.Contains("chair") || lower.Contains("seat"))) return "OfficeChair";
         if (lower.Contains("couch") || lower.Contains("sofa")) return "Sofa01";
         if (lower.Contains("closet") || lower.Contains("cabinet") || lower.Contains("locker") || lower.Contains("wardrobe") || lower.Contains("kast")) return "Closet01";
-        if (lower.Contains("bath") || lower.Contains("tub") || lower.Contains("bathtub") || lower.Contains("bass")) return "BathTub01";
+        if (lower.Contains("bath") || lower.Contains("tub") || lower.Contains("bathtub")) return "BathTub01";
         if (lower.Contains("cushion") || lower.Contains("pillow")) return "Cushion01";
         if (lower.Contains("drawer") || lower.Contains("chest")) return "Drawer01";
         if (lower.Contains("bench") || lower.Contains("bunch")) return "Bench";

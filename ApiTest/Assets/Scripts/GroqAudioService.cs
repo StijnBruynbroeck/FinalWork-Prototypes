@@ -33,6 +33,7 @@ public class GroqAudioService : MonoBehaviour
         formData.Add(new MultipartFormDataSection("response_format", "json"));
         formData.Add(new MultipartFormDataSection("temperature", "0.0"));
         formData.Add(new MultipartFormDataSection("language", "en"));
+        formData.Add(new MultipartFormDataSection("prompt", "morph chair table bed bench bathtub closet cushion drawer sofa door open close bypass security unmorph turn into furniture"));
         formData.Add(new MultipartFormFileSection("file", audioData, "recording.wav", "audio/wav"));
 
         using (UnityWebRequest request = UnityWebRequest.Post(localEndpoint, formData))
