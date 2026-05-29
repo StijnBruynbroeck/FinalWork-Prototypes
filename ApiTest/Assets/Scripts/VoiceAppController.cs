@@ -88,6 +88,10 @@ public class VoiceAppController : MonoBehaviour
             bool hasLegacy = specificDoor.GetComponent<Animation>() != null || specificDoor.GetComponentInParent<Animation>() != null || specificDoor.GetComponentInChildren<Animation>() != null;
             Debug.Log($"specificDoor = '{specificDoor.gameObject.name}', Animator={hasAnim}, Animation={hasLegacy}");
         }
+
+        GameObject helpGo = new GameObject("HelpPanelRunner");
+        helpGo.transform.SetParent(transform);
+        helpGo.AddComponent<HelpPanel>();
     }
 
     void Update()
