@@ -62,10 +62,10 @@ public class HelpPanel : MonoBehaviour
             "<color=#00FF41>DOOR CODE</color>\n" +
             "<color=#FFFFFFCC>  \"one two three ...\"</color>\n\n" +
             "<color=#00FF41>TERMINAL</color>\n" +
-            "<color=#FFFFFFCC>  zeg grid-woorden\n" +
+            "<color=#FFFFFFCC>  say grid words\n" +
             "  (ACCESS, OVERRIDE, ...)</color>\n\n" +
             "<color=#00FF41>PUZZLE</color>\n" +
-            "<color=#FFFFFFCC>  volg scherm-instructies</color>\n\n" +
+            "<color=#FFFFFFCC>  follow on-screen prompts</color>\n\n" +
             "<color=#00FF4166>[ H ] hide/show</color>";
 
         TMP_FontAsset font = Resources.Load<TMP_FontAsset>("Fonts & Materials/JetBrainsMono-Regular SDF");
