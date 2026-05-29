@@ -76,23 +76,6 @@ public class HelpPanel : MonoBehaviour
         }
         Debug.Log($"[HelpPanel] font={(font != null ? font.name : "NULL")}");
 
-        if (font != null)
-        {
-            GameObject testGo = new GameObject("HelpPanel_Test");
-            testGo.transform.SetParent(targetCanvas.transform, false);
-            RectTransform testRt = testGo.AddComponent<RectTransform>();
-            testRt.anchorMin = new Vector2(0.5f, 0.5f);
-            testRt.anchorMax = new Vector2(0.5f, 0.5f);
-            testRt.sizeDelta = new Vector2(600f, 40f);
-            testRt.anchoredPosition = Vector2.zero;
-            TextMeshProUGUI testText = testGo.AddComponent<TextMeshProUGUI>();
-            testText.text = "HelpPanel werkt!";
-            testText.font = font;
-            testText.fontSize = 24;
-            testText.color = Color.green;
-            testText.alignment = TextAlignmentOptions.Midline;
-        }
-
         panelRoot = new GameObject("HelpPanel");
         panelRoot.transform.SetParent(targetCanvas.transform, false);
         RectTransform rootRt = panelRoot.AddComponent<RectTransform>();
@@ -116,7 +99,15 @@ public class HelpPanel : MonoBehaviour
 
         if (font != null)
         {
-            TextMeshProUGUI helpText = innerBg.AddComponent<TextMeshProUGUI>();
+            GameObject textGo = new GameObject("HelpText");
+            textGo.transform.SetParent(innerBg.transform, false);
+            RectTransform textRt = textGo.AddComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(8f, 6f);
+            textRt.offsetMax = new Vector2(-8f, -6f);
+
+            TextMeshProUGUI helpText = textGo.AddComponent<TextMeshProUGUI>();
             helpText.text = content;
             helpText.font = font;
             helpText.fontSize = 14;
