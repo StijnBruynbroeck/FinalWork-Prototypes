@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 
 public class HelpPanel : MonoBehaviour
 {
-    [Header("UI References")]
     [SerializeField] private Canvas targetCanvas;
 
     private GameObject panelRoot;
@@ -14,12 +13,31 @@ public class HelpPanel : MonoBehaviour
 
     void Start()
     {
-        if (targetCanvas == null)
-            targetCanvas = FindObjectOfType<Canvas>();
-
+        FindCanvas();
         if (targetCanvas == null) return;
-
         BuildPanel();
+    }
+
+    void FindCanvas()
+    {
+        GameObject statusPanel = GameObject.Find("StatusPanel");
+        if (statusPanel != null)
+        {
+            targetCanvas = statusPanel.GetComponentInParent<Canvas>();
+            if (targetCanvas != null) return;
+        }
+
+        Canvas[] all = FindObjectsOfType<Canvas>();
+        foreach (var c in all)
+        {
+            if (c.renderMode == RenderMode.ScreenSpaceOverlay && c.isActiveAndEnabled)
+            {
+                targetCanvas = c;
+                return;
+            }
+        }
+
+        Debug.LogError("[HelpPanel] Geen Canvas gevonden!");
     }
 
     void Update()
@@ -32,6 +50,7 @@ public class HelpPanel : MonoBehaviour
     {
         Color darkBg = new Color(0.02f, 0.07f, 0.03f, 0.92f);
         Color green = new Color(0, 1f, 0.2549f);
+        Color dimGreen = new Color(0.04f, 1f, 0f, 0.6f);
 
         string content =
             "<b><color=#00FF41>COMMANDS</color></b>     [<color=#00FF41>H</color>] ⊖\n\n" +
@@ -49,16 +68,39 @@ public class HelpPanel : MonoBehaviour
             "  volg scherm-instructies\n\n" +
             "<size=16>[ <color=#00FF41>H</color> ] hide/show</size>";
 
+        TMP_FontAsset font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        if (font == null)
+        {
+            TMP_Text existing = FindObjectOfType<TMP_Text>();
+            if (existing != null) font = existing.font;
+        }
+        Debug.Log($"[HelpPanel] font={(font != null ? font.name : "NULL")}");
+
+        if (font != null)
+        {
+            GameObject testGo = new GameObject("HelpPanel_Test");
+            testGo.transform.SetParent(targetCanvas.transform, false);
+            RectTransform testRt = testGo.AddComponent<RectTransform>();
+            testRt.anchorMin = new Vector2(0.5f, 0.5f);
+            testRt.anchorMax = new Vector2(0.5f, 0.5f);
+            testRt.sizeDelta = new Vector2(600f, 40f);
+            testRt.anchoredPosition = Vector2.zero;
+            TextMeshProUGUI testText = testGo.AddComponent<TextMeshProUGUI>();
+            testText.text = "HelpPanel werkt!";
+            testText.font = font;
+            testText.fontSize = 24;
+            testText.color = Color.green;
+            testText.alignment = TextAlignmentOptions.Midline;
+        }
+
         panelRoot = new GameObject("HelpPanel");
         panelRoot.transform.SetParent(targetCanvas.transform, false);
-
         RectTransform rootRt = panelRoot.AddComponent<RectTransform>();
         rootRt.anchorMin = new Vector2(1f, 0.5f);
         rootRt.anchorMax = new Vector2(1f, 0.5f);
         rootRt.pivot = new Vector2(1f, 0.5f);
         rootRt.anchoredPosition = new Vector2(-20f, 60f);
         rootRt.sizeDelta = new Vector2(300f, 380f);
-
         Image borderImg = panelRoot.AddComponent<Image>();
         borderImg.color = green;
 
@@ -72,20 +114,16 @@ public class HelpPanel : MonoBehaviour
         Image innerImg = innerBg.AddComponent<Image>();
         innerImg.color = darkBg;
 
-        TMP_FontAsset font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
-
-        TextMeshProUGUI helpText = innerBg.AddComponent<TextMeshProUGUI>();
-        helpText.text = content;
-        if (font != null) helpText.font = font;
-        helpText.fontSize = 15;
-        helpText.color = Color.white;
-        helpText.alignment = TextAlignmentOptions.TopLeft;
-        helpText.raycastTarget = false;
-        RectTransform textRt = helpText.GetComponent<RectTransform>();
-        textRt.anchorMin = Vector2.zero;
-        textRt.anchorMax = Vector2.one;
-        textRt.offsetMin = new Vector2(8f, 6f);
-        textRt.offsetMax = new Vector2(-8f, -6f);
+        if (font != null)
+        {
+            TextMeshProUGUI helpText = innerBg.AddComponent<TextMeshProUGUI>();
+            helpText.text = content;
+            helpText.font = font;
+            helpText.fontSize = 14;
+            helpText.color = Color.white;
+            helpText.alignment = TextAlignmentOptions.TopLeft;
+            helpText.raycastTarget = false;
+        }
 
         miniHint = new GameObject("HelpMiniHint");
         miniHint.transform.SetParent(targetCanvas.transform, false);
@@ -96,13 +134,16 @@ public class HelpPanel : MonoBehaviour
         hintRt.anchoredPosition = new Vector2(-10f, -10f);
         hintRt.sizeDelta = new Vector2(80f, 30f);
 
-        TextMeshProUGUI hintText = miniHint.AddComponent<TextMeshProUGUI>();
-        hintText.text = "[ <color=#00FF41>H</color> ] Help";
-        if (font != null) hintText.font = font;
-        hintText.fontSize = 15;
-        hintText.color = new Color(0.04f, 1f, 0f, 0.6f);
-        hintText.alignment = TextAlignmentOptions.Right;
-        hintText.raycastTarget = false;
+        if (font != null)
+        {
+            TextMeshProUGUI hintText = miniHint.AddComponent<TextMeshProUGUI>();
+            hintText.text = "[ <color=#00FF41>H</color> ] Help";
+            hintText.font = font;
+            hintText.fontSize = 14;
+            hintText.color = dimGreen;
+            hintText.alignment = TextAlignmentOptions.Right;
+            hintText.raycastTarget = false;
+        }
 
         miniHint.SetActive(false);
     }
