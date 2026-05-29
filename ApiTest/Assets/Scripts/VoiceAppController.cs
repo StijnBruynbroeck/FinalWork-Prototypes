@@ -482,7 +482,7 @@ public class VoiceAppController : MonoBehaviour
         string lower = text.ToLower();
         if (lower.Contains("bed") || lower.Contains("cot") || lower.Contains("bad")) return "Bed01";
         if (lower.Contains("table") || lower.Contains("desk")) return "Table01";
-        if (lower.Contains("chair") || lower.Contains("seat")) return "Chair01";
+        if (lower.Contains("chair") || lower.Contains("seat") || lower.Contains("stool") || lower.Contains("throne")) return "Chair01";
         if (lower.Contains("office") && (lower.Contains("chair") || lower.Contains("seat"))) return "OfficeChair";
         if (lower.Contains("couch") || lower.Contains("sofa")) return "Sofa01";
         if (lower.Contains("closet") || lower.Contains("cabinet") || lower.Contains("locker") || lower.Contains("wardrobe") || lower.Contains("kast")) return "Closet01";

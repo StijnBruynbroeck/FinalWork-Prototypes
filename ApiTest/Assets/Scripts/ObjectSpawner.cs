@@ -128,7 +128,22 @@ public class ObjectSpawner : MonoBehaviour
 
         CharacterController cc = playerTransform.GetComponent<CharacterController>();
         float charHalfHeight = cc != null ? cc.height * 0.5f : 1f;
-        float groundY = playerTransform.position.y - charHalfHeight;
+        float charRadius = cc != null ? cc.radius : 0.5f;
+        Vector3 rayOrigin = playerTransform.position - new Vector3(0, charHalfHeight + charRadius + 0.1f, 0);
+
+        RaycastHit hit;
+        float groundY;
+
+        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 10f))
+        {
+            groundY = hit.point.y;
+            Debug.Log($"SnapToGround: raycast hit {hit.collider.name} at Y={hit.point.y}");
+        }
+        else
+        {
+            groundY = 0f;
+            Debug.Log($"SnapToGround: raycast missed, fallback to Y=0");
+        }
 
         obj.transform.position = new Vector3(
             obj.transform.position.x,
