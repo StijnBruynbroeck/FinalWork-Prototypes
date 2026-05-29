@@ -1,187 +1,176 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
-using UnityEngine.InputSystem;
+using System.Text.RegularExpressions;
 
 public class DoorCode : MonoBehaviour
 {
-    [Header("Numpad Canvas (auto-found if empty)")]
-    [SerializeField] private Canvas numpadCanvas;
+    [Header("Door Controller (auto-found if empty)")]
+    [SerializeField] private DoorController doorController;
+
+    [Header("UI")]
     [SerializeField] private TMP_Text codeDisplayText;
 
-    [Header("Buttons (auto-found if empty)")]
-    [SerializeField] private Button[] numberButtons;
-    [SerializeField] private Button cancelButton;
-    [SerializeField] private Button correctButton;
-
-    [Header("Door Settings")]
-    [SerializeField] private float interactionRange = 3f;
+    [Header("Trigger Settings")]
+    [SerializeField] private Vector3 triggerSize = new Vector3(3, 3, 3);
 
     [Header("Code")]
     [SerializeField] private string correctCode = "12123";
 
+    private Canvas numpadCanvas;
     private string enteredCode = "";
-    private bool isLocked = false;
+    private bool hasBeenUnlocked = false;
+    private bool playerInRange = false;
+
+    private static readonly string[] DigitWords = {
+        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"
+    };
 
     void Start()
     {
-        if (numpadCanvas == null)
-            numpadCanvas = GameObject.Find("Numpad")?.GetComponent<Canvas>();
+        if (doorController == null)
+            doorController = GetComponent<DoorController>();
+        if (doorController == null)
+            doorController = GetComponentInParent<DoorController>();
 
-        if (numpadCanvas == null)
-        {
-            Debug.LogError("DoorCode: Geen Numpad canvas gevonden.");
-            enabled = false;
-            return;
-        }
+        SetupTrigger();
 
         if (codeDisplayText == null)
-            codeDisplayText = numpadCanvas.GetComponentInChildren<TMP_Text>();
+            codeDisplayText = GetComponentInChildren<TMP_Text>(true);
 
-        if (codeDisplayText == null)
-            Debug.LogWarning("DoorCode: Geen TMP_Text gevonden in Numpad canvas.");
-
-        if (numberButtons == null || numberButtons.Length == 0)
-            FindButtonsByText();
-
-        for (int i = 0; i < numberButtons.Length && i < 10; i++)
+        numpadCanvas = GameObject.Find("Numpad")?.GetComponent<Canvas>();
+        if (numpadCanvas != null)
         {
-            int digit = i;
-            if (numberButtons[i] != null)
-                numberButtons[i].onClick.AddListener(() => AddDigit(digit));
-            else
-                Debug.LogWarning($"DoorCode: Geen button gevonden voor cijfer {i}");
+            Debug.Log($"DoorCode: Numpad canvas gevonden, verbergen...");
+            numpadCanvas.gameObject.SetActive(false);
         }
-
-        if (cancelButton != null)
-            cancelButton.onClick.AddListener(CloseNumpad);
-
-        if (correctButton != null)
-            correctButton.onClick.AddListener(RemoveLastDigit);
-
-        numpadCanvas.gameObject.SetActive(false);
+        else
+        {
+            Debug.LogWarning("DoorCode: Numpad canvas NIET gevonden via GameObject.Find!");
+        }
     }
 
-    private void FindButtonsByText()
+    private void SetupTrigger()
     {
-        numberButtons = new Button[10];
-        Button[] allButtons = numpadCanvas.GetComponentsInChildren<Button>(true);
+        BoxCollider trigger = GetComponent<BoxCollider>();
+        bool wasAdded = trigger == null;
+        if (wasAdded)
+            trigger = gameObject.AddComponent<BoxCollider>();
+        trigger.isTrigger = true;
+        trigger.size = triggerSize;
+        trigger.center = new Vector3(0, 1, 0);
+        Debug.Log($"DoorCode: Trigger setup - {(wasAdded ? "nieuwe BoxCollider toegevoegd" : "bestaande BoxCollider gevonden")}, size={trigger.size}, isTrigger={trigger.isTrigger}");
+    }
 
-        foreach (Button btn in allButtons)
-        {
-            string btnName = btn.name.ToLower();
-            string btnText = btn.GetComponentInChildren<Text>()?.text?.Trim()
-                          ?? btn.GetComponentInChildren<TMP_Text>()?.text?.Trim()
-                          ?? "";
+    void OnTriggerEnter(Collider other)
+    {
+        Debug.Log($"DoorCode: OnTriggerEnter met: {other.gameObject.name}, tag: {other.tag}");
+        if (!other.CompareTag("Player")) return;
+        playerInRange = true;
+        ToonCanvas();
+        if (doorController != null && !doorController.IsLocked())
+            doorController.OpenDoor();
+    }
 
-            Debug.Log($"DoorCode: Button gevonden - name: '{btn.name}', text: '{btnText}'");
-
-            if (btnName.Contains("cancel") || btnText.ToLower() == "cancel" || btnText == "X")
-            {
-                cancelButton = btn;
-                continue;
-            }
-
-            if (btnName.Contains("correct") || btnText.ToLower() == "correct"
-                || btnText.ToLower() == "confirm" || btnName.Contains("confirm")
-                || btnText == "C" || btnText == "<" || btnText == "⌫")
-            {
-                correctButton = btn;
-                continue;
-            }
-
-            if (int.TryParse(btnText, out int digit) && digit >= 0 && digit <= 9)
-            {
-                numberButtons[digit] = btn;
-                continue;
-            }
-
-            if (btnText.Length == 1 && char.IsDigit(btnText[0]))
-            {
-                int d = btnText[0] - '0';
-                numberButtons[d] = btn;
-            }
-        }
-
-        Debug.Log($"DoorCode: Cancel={cancelButton?.name}, Correct={correctButton?.name}");
-        for (int i = 0; i < 10; i++)
-            Debug.Log($"DoorCode: Button[{i}]={(numberButtons[i] != null ? numberButtons[i].name : "NULL")}");
+    void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag("Player")) return;
+        playerInRange = false;
+        VerbergCanvas();
+        if (doorController != null && doorController.IsOpen())
+            doorController.CloseDoor();
     }
 
     void Update()
     {
-        if (Keyboard.current == null) return;
+        if (numpadCanvas == null) return;
 
-        if (Keyboard.current.eKey.wasPressedThisFrame && IsPlayerInRange())
-        {
-            ToggleNumpad();
-        }
-
-        if (numpadCanvas != null && numpadCanvas.gameObject.activeSelf && Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            CloseNumpad();
-        }
-    }
-
-    private bool IsPlayerInRange()
-    {
-        GameObject player = GameObject.Find("Player");
-        if (player == null)
-        {
-            Debug.LogWarning("DoorCode: Geen Player GameObject gevonden in scene.");
-            return false;
-        }
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player == null) return;
 
         float dist = Vector3.Distance(transform.position, player.transform.position);
-        return dist <= interactionRange;
-    }
+        bool shouldShow = dist < 4f;
 
-    private void ToggleNumpad()
-    {
-        bool isActive = !numpadCanvas.gameObject.activeSelf;
-        numpadCanvas.gameObject.SetActive(isActive);
-
-        Cursor.lockState = isActive ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = isActive;
-
-        if (isActive)
+        if (shouldShow && !playerInRange)
         {
-            enteredCode = "";
-            isLocked = false;
-            UpdateDisplay();
+            playerInRange = true;
+            ToonCanvas();
+        }
+        else if (!shouldShow && playerInRange)
+        {
+            playerInRange = false;
+            VerbergCanvas();
         }
     }
 
-    private void CloseNumpad()
+    void ToonCanvas()
     {
-        numpadCanvas.gameObject.SetActive(false);
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        if (numpadCanvas != null)
+        {
+            numpadCanvas.gameObject.SetActive(true);
+            Debug.Log("DoorCode: Numpad canvas getoond!");
+        }
+    }
+
+    void VerbergCanvas()
+    {
+        if (numpadCanvas != null)
+        {
+            numpadCanvas.gameObject.SetActive(false);
+            Debug.Log("DoorCode: Numpad canvas verborgen!");
+        }
+    }
+
+    public bool ProcessVoiceCode(string spokenText)
+    {
+        if (!playerInRange || hasBeenUnlocked) return false;
+
+        string digits = ExtractDigits(spokenText.ToLower().Trim());
+        if (string.IsNullOrEmpty(digits)) return false;
+
         enteredCode = "";
-        isLocked = false;
+        foreach (char c in digits)
+        {
+            if (enteredCode.Length >= correctCode.Length) break;
+            enteredCode += c;
+        }
+
+        CheckCode();
+        return true;
     }
 
-    private void AddDigit(int digit)
+    private string ExtractDigits(string text)
     {
-        if (isLocked) return;
-        if (enteredCode.Length >= correctCode.Length) return;
+        string digits = "";
 
-        enteredCode += digit.ToString();
-        Debug.Log($"DoorCode: ingevoerd='{enteredCode}', correct='{correctCode}', match={enteredCode == correctCode}");
-        UpdateDisplay();
+        MatchCollection digitMatches = Regex.Matches(text, @"\d");
+        if (digitMatches.Count > 0)
+        {
+            foreach (Match m in digitMatches)
+                digits += m.Value;
+            return digits;
+        }
+
+        string[] words = text.Split(' ');
+        foreach (string word in words)
+        {
+            string cleaned = word.Trim('.', ',', '!', '?');
+            for (int i = 0; i < DigitWords.Length; i++)
+            {
+                if (cleaned == DigitWords[i])
+                {
+                    digits += i.ToString();
+                    break;
+                }
+            }
+        }
+
+        return digits;
     }
 
-    private void RemoveLastDigit()
+    private void CheckCode()
     {
-        if (isLocked) return;
-        if (enteredCode.Length == 0) return;
+        if (codeDisplayText == null) return;
 
-        enteredCode = enteredCode.Substring(0, enteredCode.Length - 1);
-        UpdateDisplay();
-    }
-
-    private void UpdateDisplay()
-    {
         if (enteredCode.Length < correctCode.Length)
         {
             string display = "";
@@ -194,14 +183,17 @@ public class DoorCode : MonoBehaviour
         if (enteredCode == correctCode)
         {
             codeDisplayText.text = "<color=green>Approved</color>";
-            Debug.Log("DoorCode: CODE CORRECT!");
-            isLocked = true;
+            hasBeenUnlocked = true;
+
+            if (doorController != null)
+            {
+                doorController.UnlockDoor();
+                doorController.OpenDoor();
+            }
         }
         else
         {
             codeDisplayText.text = "<color=red>Wrong Code</color>";
-            Debug.Log($"DoorCode: FOUTE code. enteredCode='{enteredCode}' (length={enteredCode.Length}) vs correctCode='{correctCode}' (length={correctCode.Length})");
-            isLocked = true;
             Invoke(nameof(ResetCode), 1.5f);
         }
     }
@@ -209,7 +201,7 @@ public class DoorCode : MonoBehaviour
     private void ResetCode()
     {
         enteredCode = "";
-        isLocked = false;
-        codeDisplayText.text = "";
+        if (codeDisplayText != null)
+            codeDisplayText.text = "";
     }
 }

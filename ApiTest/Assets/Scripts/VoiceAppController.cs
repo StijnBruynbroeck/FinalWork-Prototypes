@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.InputSystem;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Debug = UnityEngine.Debug;
 
 public class VoiceAppController : MonoBehaviour
@@ -206,6 +207,9 @@ public class VoiceAppController : MonoBehaviour
         // --- 1. DIRECT DEUR COMMANDO ---
         if (RouteerNaarDeur(cleaned)) return;
 
+        // --- 1a. DOOR CODE CHECK (spraakgestuurde code invoer) ---
+        if (RouteerNaarCode(cleaned)) return;
+
         // --- 2. TERMINAL CHECK (actieve terminal waar speler bij staat) ---
         if (RouteerNaarTerminal(cleaned)) return;
 
@@ -375,6 +379,32 @@ public class VoiceAppController : MonoBehaviour
                 Debug.LogWarning($"Deurcommando herkend maar 'specificDoor' is null!");
                 UpdateStatus("Fout: geen deur gevonden in scene");
             }
+        }
+        return false;
+    }
+
+    bool RouteerNaarCode(string text)
+    {
+        if (specificDoor == null) return false;
+
+        DoorCode doorCode = specificDoor.GetComponent<DoorCode>();
+        if (doorCode == null) return false;
+
+        string lower = text.ToLower().Trim();
+        bool hasDigits = Regex.IsMatch(lower, @"\d");
+        bool hasNumberWords = false;
+        string[] numberWords = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
+        foreach (var w in numberWords)
+        {
+            if (lower.Contains(w)) { hasNumberWords = true; break; }
+        }
+
+        if (!hasDigits && !hasNumberWords) return false;
+
+        if (doorCode.ProcessVoiceCode(text))
+        {
+            UpdateStatus($"Code ingevoerd: {text}");
+            return true;
         }
         return false;
     }
