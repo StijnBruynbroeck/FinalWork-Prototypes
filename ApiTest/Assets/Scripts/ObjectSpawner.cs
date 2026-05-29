@@ -126,19 +126,15 @@ public class ObjectSpawner : MonoBehaviour
 
         float pivotToBottom = obj.transform.position.y - bounds.min.y;
 
-        Vector3 rayOrigin = bounds.center + Vector3.up * (bounds.extents.y + 2f);
-        RaycastHit hit;
-        float fallbackY = playerTransform.position.y - 1f;
+        CharacterController cc = playerTransform.GetComponent<CharacterController>();
+        float charHalfHeight = cc != null ? cc.height * 0.5f : 1f;
+        float groundY = playerTransform.position.y - charHalfHeight;
 
-        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, bounds.size.y + 4f, ~0))
-        {
-            obj.transform.position = new Vector3(obj.transform.position.x, hit.point.y + pivotToBottom, obj.transform.position.z);
-            Debug.Log($"SnapToGround: raycast hit {hit.collider.name} at Y={hit.point.y}");
-        }
-        else
-        {
-            obj.transform.position = new Vector3(obj.transform.position.x, fallbackY + pivotToBottom, obj.transform.position.z);
-            Debug.Log($"SnapToGround: geen grond gevonden, fallback naar Y={fallbackY}");
-        }
+        obj.transform.position = new Vector3(
+            obj.transform.position.x,
+            groundY + pivotToBottom,
+            obj.transform.position.z
+        );
+        Debug.Log($"SnapToGround: groundY={groundY}, pivotToBottom={pivotToBottom}, finalY={obj.transform.position.y}");
     }
 }

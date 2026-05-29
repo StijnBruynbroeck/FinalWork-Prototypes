@@ -270,7 +270,21 @@ public class VoiceAppController : MonoBehaviour
                 return;
             }
 
-            // --- 5c. KEYWORD FALLBACK (catch LLM flaking out with empty prefab) ---
+            // --- 5c. POST-CORRECT common LLM mis-mappings ---
+            string lowerInput = cleaned.ToLower();
+            if (!string.IsNullOrEmpty(llmResult.prefab_name) && llmResult.prefab_name.ToLower() != "none")
+            {
+                if (lowerInput.Contains("chair") && llmResult.prefab_name != "Chair01" && llmResult.prefab_name != "OfficeChair")
+                    llmResult.prefab_name = "Chair01";
+                else if (lowerInput.Contains("sofa") && llmResult.prefab_name != "Sofa01")
+                    llmResult.prefab_name = "Sofa01";
+                else if (lowerInput.Contains("table") && llmResult.prefab_name != "Table01")
+                    llmResult.prefab_name = "Table01";
+                else if (lowerInput.Contains("bed") && llmResult.prefab_name != "Bed01")
+                    llmResult.prefab_name = "Bed01";
+            }
+
+            // --- 5d. KEYWORD FALLBACK (catch LLM flaking out with empty prefab) ---
             if (string.IsNullOrEmpty(llmResult.prefab_name) || llmResult.prefab_name.ToLower() == "none")
             {
                 string fallback = TryKeywordFallback(cleaned);
@@ -281,7 +295,7 @@ public class VoiceAppController : MonoBehaviour
                 }
             }
 
-            // --- 5d. VALIDATE PREFAB EXISTS before spawning ---
+            // --- 5e. VALIDATE PREFAB EXISTS before spawning ---
             if (!string.IsNullOrEmpty(llmResult.prefab_name) && llmResult.prefab_name.ToLower() != "none")
             {
                 GameObject prefab = Resources.Load<GameObject>("Props/" + llmResult.prefab_name);
@@ -294,7 +308,7 @@ public class VoiceAppController : MonoBehaviour
                 }
             }
 
-            // --- 5d. SPAWN OBJECT ---
+            // --- 5f. SPAWN OBJECT ---
             spawner.ProcessTextAndSpawn(llmResult, UpdateStatus);
 
             // --- 6. VIJAND MULTIPLIER ---
@@ -468,7 +482,7 @@ public class VoiceAppController : MonoBehaviour
         string lower = text.ToLower();
         if (lower.Contains("bed") || lower.Contains("cot") || lower.Contains("bad")) return "Bed01";
         if (lower.Contains("table") || lower.Contains("desk")) return "Table01";
-        if (lower.Contains("chair") || lower.Contains("seat") || lower.Contains("cheer")) return "Chair01";
+        if (lower.Contains("chair") || lower.Contains("seat")) return "Chair01";
         if (lower.Contains("office") && (lower.Contains("chair") || lower.Contains("seat"))) return "OfficeChair";
         if (lower.Contains("couch") || lower.Contains("sofa")) return "Sofa01";
         if (lower.Contains("closet") || lower.Contains("cabinet") || lower.Contains("locker") || lower.Contains("wardrobe") || lower.Contains("kast")) return "Closet01";

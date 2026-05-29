@@ -124,7 +124,7 @@ public class GroqLLMService : MonoBehaviour
                               "2) If the input is unclear, garbled, too short, or does NOT clearly request a morph → score=0, prefab_name='none'. NO EXCEPTIONS. " +
                                $"3) Only pick a prefab from this list if the input CLEARLY names a piece of furniture: [{availablePrefabs}]. " +
                                "Use common sense: 'bed'/'bad'/'cot' → Bed01. 'table'/'desk'/'bureau' → Table01. " +
-                              "'chair'/'seat'/'cheer' → Chair01 or OfficeChair. 'couch'/'sofa' → Sofa01. " +
+                                                             "'chair'/'seat' → Chair01 or OfficeChair. 'couch'/'sofa' → Sofa01. " +
                               "'closet'/'cabinet'/'locker'/'wardrobe' → Closet01. 'bath'/'tub'/'bathtub' → BathTub01. " +
                               "'cushion'/'pillow' → Cushion01. 'drawer'/'chest' → Drawer01. 'bench'/'bunch' → Bench. " +
                               "Return the exact prefab name from the list. If no furniture is requested, set prefab_name='none'. " +
