@@ -53,22 +53,22 @@ public class HelpPanel : MonoBehaviour
         Color dimGreen = new Color(0.04f, 1f, 0f, 0.6f);
 
         string content =
-            "<b><color=#00FF41>COMMANDS</color></b>     [<color=#00FF41>H</color>] ⊖\n\n" +
-            "<b>MORPH</b>\n" +
-            "  \"turn into chair\"\n" +
-            "  \"turn into table\"\n\n" +
-            "<b>UNMORPH</b>\n" +
-            "  \"unmorph\"\n\n" +
-            "<b>DOOR CODE</b>\n" +
-            "  \"one two three ...\"\n\n" +
-            "<b>TERMINAL</b>\n" +
-            "  zeg grid-woorden\n" +
-            "  (ACCESS, OVERRIDE, ...)\n\n" +
-            "<b>PUZZLE</b>\n" +
-            "  volg scherm-instructies\n\n" +
-            "<size=16>[ <color=#00FF41>H</color> ] hide/show</size>";
+            "<color=#00FF41>COMMANDS</color>     [<color=#00FF41>H</color>]\n\n" +
+            "<color=#00FF41>MORPH</color>\n" +
+            "<color=#FFFFFFCC>  \"turn into chair\"\n" +
+            "  \"turn into table\"</color>\n\n" +
+            "<color=#00FF41>UNMORPH</color>\n" +
+            "<color=#FFFFFFCC>  \"unmorph\"</color>\n\n" +
+            "<color=#00FF41>DOOR CODE</color>\n" +
+            "<color=#FFFFFFCC>  \"one two three ...\"</color>\n\n" +
+            "<color=#00FF41>TERMINAL</color>\n" +
+            "<color=#FFFFFFCC>  zeg grid-woorden\n" +
+            "  (ACCESS, OVERRIDE, ...)</color>\n\n" +
+            "<color=#00FF41>PUZZLE</color>\n" +
+            "<color=#FFFFFFCC>  volg scherm-instructies</color>\n\n" +
+            "<size=14><color=#00FF4166>[ H ] hide/show</color></size>";
 
-        TMP_FontAsset font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        TMP_FontAsset font = Resources.Load<TMP_FontAsset>("Fonts & Materials/JetBrainsMono-Regular SDF");
         if (font == null)
         {
             TMP_Text existing = FindObjectOfType<TMP_Text>();
@@ -110,7 +110,7 @@ public class HelpPanel : MonoBehaviour
             TextMeshProUGUI helpText = textGo.AddComponent<TextMeshProUGUI>();
             helpText.text = content;
             helpText.font = font;
-            helpText.fontSize = 14;
+            helpText.fontSize = 15;
             helpText.color = Color.white;
             helpText.alignment = TextAlignmentOptions.TopLeft;
             helpText.raycastTarget = false;
@@ -123,14 +123,14 @@ public class HelpPanel : MonoBehaviour
         hintRt.anchorMax = new Vector2(1f, 1f);
         hintRt.pivot = new Vector2(1f, 1f);
         hintRt.anchoredPosition = new Vector2(-10f, -10f);
-        hintRt.sizeDelta = new Vector2(80f, 30f);
+        hintRt.sizeDelta = new Vector2(110f, 36f);
 
         if (font != null)
         {
             TextMeshProUGUI hintText = miniHint.AddComponent<TextMeshProUGUI>();
             hintText.text = "[ <color=#00FF41>H</color> ] Help";
             hintText.font = font;
-            hintText.fontSize = 14;
+            hintText.fontSize = 18;
             hintText.color = dimGreen;
             hintText.alignment = TextAlignmentOptions.Right;
             hintText.raycastTarget = false;
