@@ -118,19 +118,23 @@ public class GroqLLMService : MonoBehaviour
         }
         string availablePrefabs = cachedPrefabList;
 
-        string systemPrompt = "You are a morphing AI in a stealth game. " +
-                              "Rules: " +
-                              "1) Score how well the object fits in the current location (0-100). Items that belong there=high, out of place=low. Score is ONLY about zone fit, not about whether to morph. " +
-                              "2) If the input is unclear, garbled, too short, or does NOT clearly request a morph → score=0, prefab_name='none'. NO EXCEPTIONS. " +
-                               $"3) Only pick a prefab from this list if the input CLEARLY names a piece of furniture: [{availablePrefabs}]. " +
-                               "Use common sense: 'bed'/'bad'/'cot' → Bed01. 'table'/'desk'/'bureau' → Table01. " +
-                                                             "'chair'/'seat' → Chair01 or OfficeChair. 'couch'/'sofa' → Sofa01. " +
-                              "'closet'/'cabinet'/'locker'/'wardrobe' → Closet01. 'bath'/'tub'/'bathtub' → BathTub01. " +
-                              "'cushion'/'pillow' → Cushion01. 'drawer'/'chest' → Drawer01. 'bench'/'bunch' → Bench. " +
-                              "Return the exact prefab name from the list. If no furniture is requested, set prefab_name='none'. " +
-                              "4) door_action='none' unless the player says 'open/close the door'. " +
-                              "5) unmorph=true if player says 'unmorph/turn me back/revert/change me back/undo/morph back'. When unmorph is true, prefab_name MUST be 'none'. " +
-                              "Output JSON only: {{\"score\":0,\"reason\":\"\",\"prefab_name\":\"none\",\"door_action\":\"none\",\"unmorph\":false}}";
+        string systemPrompt = "You are a morphing AI in a stealth game. Follow these rules STRICTLY. " +
+                              "1) Score 0-100: how well the object fits the current zone. High=belongs, low=out of place. Score is ONLY about zone fit. " +
+                              "2) If input is unclear, garbled, or does NOT clearly request a morph → score=0, prefab_name='none'. " +
+                              $"3) Only pick from this list: [{availablePrefabs}]. Use these EXACT mappings (no substitutions): " +
+                              "'chair'/'seat'/'stool' → Chair01. 'office chair' → OfficeChair. " +
+                              "'couch'/'sofa' → Sofa01. 'bed'/'cot' → Bed01. " +
+                              "'table'/'desk' → Table01. " +
+                              "'closet'/'cabinet'/'locker'/'wardrobe' → Closet01. " +
+                              "'bath'/'tub'/'bathtub' → BathTub01. " +
+                              "'cushion'/'pillow' → Cushion01. " +
+                              "'drawer'/'chest' → Drawer01. " +
+                              "'bench' → Bench. " +
+                              "CRITICAL: 'chair' → Chair01, NEVER Sofa01. 'sofa' → Sofa01, NEVER Chair01. " +
+                              "Return exactly one prefab name from the list. If no furniture → prefab_name='none'. " +
+                              "4) door_action='none' unless player says open/close door. " +
+                              "5) unmorph=true if player says unmorph/turn back/revert/change back/undo/morph back. When unmorph=true, prefab_name MUST be 'none'. " +
+                              "Output JSON ONLY: {{\"score\":0,\"reason\":\"\",\"prefab_name\":\"none\",\"door_action\":\"none\",\"unmorph\":false}}";
 
         string userPrompt = $"Current location: {roomContext}. The player says: '{playerInput}'";
         Debug.Log($"[LLM] VERSTUURD NAAR OLLAMA: {userPrompt}");

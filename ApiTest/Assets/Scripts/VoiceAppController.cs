@@ -270,21 +270,7 @@ public class VoiceAppController : MonoBehaviour
                 return;
             }
 
-            // --- 5c. POST-CORRECT common LLM mis-mappings ---
-            string lowerInput = cleaned.ToLower();
-            if (!string.IsNullOrEmpty(llmResult.prefab_name) && llmResult.prefab_name.ToLower() != "none")
-            {
-                if (lowerInput.Contains("chair") && llmResult.prefab_name != "Chair01" && llmResult.prefab_name != "OfficeChair")
-                    llmResult.prefab_name = "Chair01";
-                else if (lowerInput.Contains("sofa") && llmResult.prefab_name != "Sofa01")
-                    llmResult.prefab_name = "Sofa01";
-                else if (lowerInput.Contains("table") && llmResult.prefab_name != "Table01")
-                    llmResult.prefab_name = "Table01";
-                else if (lowerInput.Contains("bed") && llmResult.prefab_name != "Bed01")
-                    llmResult.prefab_name = "Bed01";
-            }
-
-            // --- 5d. KEYWORD FALLBACK (catch LLM flaking out with empty prefab) ---
+            // --- 5c. KEYWORD FALLBACK (only when LLM returns nothing — true fallback) ---
             if (string.IsNullOrEmpty(llmResult.prefab_name) || llmResult.prefab_name.ToLower() == "none")
             {
                 string fallback = TryKeywordFallback(cleaned);
@@ -295,7 +281,7 @@ public class VoiceAppController : MonoBehaviour
                 }
             }
 
-            // --- 5e. VALIDATE PREFAB EXISTS before spawning ---
+            // --- 5d. VALIDATE PREFAB EXISTS before spawning ---
             if (!string.IsNullOrEmpty(llmResult.prefab_name) && llmResult.prefab_name.ToLower() != "none")
             {
                 GameObject prefab = Resources.Load<GameObject>("Props/" + llmResult.prefab_name);
@@ -308,7 +294,7 @@ public class VoiceAppController : MonoBehaviour
                 }
             }
 
-            // --- 5f. SPAWN OBJECT ---
+            // --- 5e. SPAWN OBJECT ---
             spawner.ProcessTextAndSpawn(llmResult, UpdateStatus);
 
             // --- 6. VIJAND MULTIPLIER ---
