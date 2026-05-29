@@ -11,6 +11,34 @@ public class GroqLLMService : MonoBehaviour
     private string localEndpoint = "http://localhost:11434/v1/chat/completions";
 
     private static string cachedPrefabList = null;
+    private static bool hasWarmedUp = false;
+
+    void Start()
+    {
+        if (!hasWarmedUp)
+            StartCoroutine(WarmUp());
+    }
+
+    private IEnumerator WarmUp()
+    {
+        hasWarmedUp = true;
+        string dummyJson = "{\"model\":\"phi3:mini\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"max_tokens\":1}";
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(dummyJson);
+
+        using (UnityWebRequest request = new UnityWebRequest(localEndpoint, "POST"))
+        {
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+            request.SetRequestHeader("Authorization", "Bearer " + apiKey.Trim());
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+                Debug.Log("Ollama warm-up voltooid (model geladen in geheugen)");
+            else
+                Debug.Log("Ollama warm-up mislukt (model wordt bij eerste request geladen): " + request.error);
+        }
+    }
 
     public void EvaluatePlausibility(string roomContext, string playerInput, Action<LLMResult> onComplete)
     {

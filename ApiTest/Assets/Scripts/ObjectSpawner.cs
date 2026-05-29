@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 public class ObjectSpawner : MonoBehaviour
@@ -48,10 +49,11 @@ public class ObjectSpawner : MonoBehaviour
         if (currentProp != null)
             Destroy(currentProp);
 
-        currentProp = Instantiate(loadedPrefab, playerTransform);
+        Vector3 spawnPos = playerTransform.position;
+        currentProp = Instantiate(loadedPrefab, spawnPos, Quaternion.identity);
         currentPrefabName = prefabName;
-        currentProp.transform.localPosition = Vector3.zero;
-        currentProp.transform.localRotation = Quaternion.identity;
+
+        StartCoroutine(SnapToGround(currentProp));
 
         if (playerVisuals != null)
         {
@@ -111,5 +113,32 @@ public class ObjectSpawner : MonoBehaviour
         Debug.Log("Unmorph: Terug naar menselijk formulier!");
     }
 
+    private IEnumerator SnapToGround(GameObject obj)
+    {
+        yield return null;
 
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) yield break;
+
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+            bounds.Encapsulate(renderers[i].bounds);
+
+        float pivotToBottom = obj.transform.position.y - bounds.min.y;
+
+        Vector3 rayOrigin = bounds.center + Vector3.up * (bounds.extents.y + 2f);
+        RaycastHit hit;
+        float fallbackY = playerTransform.position.y - 1f;
+
+        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, bounds.size.y + 4f, ~0))
+        {
+            obj.transform.position = new Vector3(obj.transform.position.x, hit.point.y + pivotToBottom, obj.transform.position.z);
+            Debug.Log($"SnapToGround: raycast hit {hit.collider.name} at Y={hit.point.y}");
+        }
+        else
+        {
+            obj.transform.position = new Vector3(obj.transform.position.x, fallbackY + pivotToBottom, obj.transform.position.z);
+            Debug.Log($"SnapToGround: geen grond gevonden, fallback naar Y={fallbackY}");
+        }
+    }
 }
