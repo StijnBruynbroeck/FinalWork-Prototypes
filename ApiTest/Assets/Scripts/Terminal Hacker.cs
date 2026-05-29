@@ -25,9 +25,9 @@ public class TerminalHacker : MonoBehaviour
 
     [Header("Multi-Step Hack Instellingen")]
     public string[] hackSteps = {
-        "initieer verbinding",
-        "authenticatiecode alpha zeven",
-        "override beveiliging"
+        "initiate connection",
+        "authentication code alpha seven",
+        "override security"
     };
     private int huidigeStap = 0;
 
@@ -193,7 +193,7 @@ public class TerminalHacker : MonoBehaviour
     {
         if (hackMinigame == null) return;
         string grid = hackMinigame.FormatWoordGrid();
-        string text = ">_ SECURITY OVERRIDE PROTOCOL ACTIVE\n>_ IDENTIFIEER WACHTWOORD\n\n" + grid;
+        string text = ">_ SECURITY OVERRIDE PROTOCOL ACTIVE\n>_ IDENTIFY PASSWORD\n\n" + grid;
 
         if (terminalDisplay != null)
             terminalDisplay.ToonMetCursor(text);
@@ -280,7 +280,7 @@ public class TerminalHacker : MonoBehaviour
         if (result == -2)
         {
             if (terminalUI != null)
-                terminalUI.ToonFout($">_ INVALID WORD: \"{text}\"\n>_ WOORD NIET GEVONDEN IN DATABASE");
+                terminalUI.ToonFout($">_ INVALID WORD: \"{text}\"\n>_ WORD NOT FOUND IN DATABASE");
             PlaySound(failSound);
             return false;
         }
@@ -531,11 +531,11 @@ public class TerminalHacker : MonoBehaviour
     {
         PlaySound(failSound);
         if (terminalUI != null)
-            terminalUI.ToonFout(">_ ERROR: INVALID CODE\n>_ TOEGANG GEWEIGERD\n>_ RESETTING SEQUENCE...");
+                terminalUI.ToonFout(">_ ERROR: INVALID CODE\n>_ ACCESS DENIED\n>_ RESETTING SEQUENCE...");
         else if (terminalScherm != null)
         {
             terminalScherm.color = Color.red;
-            terminalScherm.text = ">_ ERROR: INVALID CODE\n>_ TOEGANG GEWEIGERD\n>_ RESETTING SEQUENCE...";
+            terminalScherm.text = ">_ ERROR: INVALID CODE\n>_ ACCESS DENIED\n>_ RESETTING SEQUENCE...";
         }
 
         Debug.LogWarning("Hack mislukt! Sequence gereset.");

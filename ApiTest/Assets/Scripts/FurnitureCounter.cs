@@ -59,7 +59,7 @@ public class FurnitureCounter : MonoBehaviour
         string prompt = "Say: ";
         for (int i = 0; i < furnitureTargets.Length; i++)
         {
-            if (i > 0) prompt += " en ";
+            if (i > 0) prompt += " and ";
             prompt += $"\"[{furnitureTargets[i].displayName}] = [...number]\"";
         }
         return prompt;
@@ -174,9 +174,9 @@ public class FurnitureCounter : MonoBehaviour
         for (int i = 0; i < furnitureTargets.Length; i++)
         {
             var ft = furnitureTargets[i];
-            feedback += $">_ {ft.displayName}: verwacht {ft.expectedCount}\n";
+            feedback += $">_ {ft.displayName}: expected {ft.expectedCount}\n";
         }
-        feedback += "\n>_ PROBEER OPNIEUW";
+        feedback += "\n>_ TRY AGAIN";
         return feedback;
     }
 

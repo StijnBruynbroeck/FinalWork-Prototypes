@@ -160,13 +160,13 @@ public class VoiceAppController : MonoBehaviour
         {
             if (lower.Contains(marker))
             {
-                UpdateStatus("Niet verstaan — probeer opnieuw.");
+                UpdateStatus("Not understood — try again.");
                 return;
             }
         }
         if (lower.Length < 4)
         {
-            UpdateStatus("Te kort — probeer opnieuw.");
+            UpdateStatus("Too short — try again.");
             return;
         }
 
@@ -198,11 +198,11 @@ public class VoiceAppController : MonoBehaviour
                 if (spawner != null && spawner.IsMorphed)
                 {
                     spawner.Unmorph();
-                    UpdateStatus("Unmorphed! Terug naar menselijk formulier.");
+                    UpdateStatus("Unmorphed! Back to human form.");
                 }
                 else
                 {
-                    UpdateStatus("Je bent al in menselijke vorm.");
+                    UpdateStatus("You're already in human form.");
                 }
                 return;
             }
@@ -248,12 +248,12 @@ public class VoiceAppController : MonoBehaviour
                     if (llmResult.door_action == "open")
                     {
                         specificDoor.OpenDoor();
-                        UpdateStatus("Deur geopend via AI!");
+                        UpdateStatus("Door opened via AI!");
                     }
                     else if (llmResult.door_action == "close")
                     {
                         specificDoor.CloseDoor();
-                        UpdateStatus("Deur gesloten via AI!");
+                        UpdateStatus("Door closed via AI!");
                     }
                 }
                 return;
@@ -265,11 +265,11 @@ public class VoiceAppController : MonoBehaviour
                 if (spawner != null && spawner.IsMorphed)
                 {
                     spawner.Unmorph();
-                    UpdateStatus("Unmorphed! Terug naar menselijk formulier.");
+                    UpdateStatus("Unmorphed! Back to human form.");
                 }
                 else
                 {
-                    UpdateStatus("Je bent al in menselijke vorm.");
+                    UpdateStatus("You're already in human form.");
                 }
                 return;
             }
@@ -291,7 +291,7 @@ public class VoiceAppController : MonoBehaviour
                 GameObject prefab = Resources.Load<GameObject>("Props/" + llmResult.prefab_name);
                 if (prefab == null)
                 {
-                    UpdateStatus($"Object '{llmResult.prefab_name}' bestaat niet — geweigerd.");
+                    UpdateStatus($"Object '{llmResult.prefab_name}' doesn't exist — denied.");
                     if (analytics != null)
                         analytics.LogData(lastSpokenText, "none", 0, latencyMs);
                     return;
@@ -365,12 +365,12 @@ public class VoiceAppController : MonoBehaviour
                 if (isOpenCmd)
                 {
                     specificDoor.OpenDoor();
-                    UpdateStatus($"Deur geopend: {text}");
+                    UpdateStatus($"Door opened: {text}");
                 }
                 else
                 {
                     specificDoor.CloseDoor();
-                    UpdateStatus($"Deur gesloten: {text}");
+                    UpdateStatus($"Door closed: {text}");
                 }
 
                 if (analytics != null)
@@ -381,7 +381,7 @@ public class VoiceAppController : MonoBehaviour
             else
             {
                 Debug.LogWarning($"Deurcommando herkend maar 'specificDoor' is null!");
-                UpdateStatus("Fout: geen deur gevonden in scene");
+                UpdateStatus("Error: no door found in scene");
             }
         }
         return false;
@@ -407,7 +407,7 @@ public class VoiceAppController : MonoBehaviour
 
         if (doorCode.ProcessVoiceCode(text))
         {
-            UpdateStatus($"Code ingevoerd: {text}");
+            UpdateStatus($"Code entered: {text}");
             return true;
         }
         return false;

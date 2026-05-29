@@ -11,18 +11,18 @@ public class VoiceRiddlePuzzle : MonoBehaviour
     
     [Header("Stages")]
     public string[] stageDescriptions = {
-        "SCAN DE KAMER - Beschrijf wat je ziet",
-        "IDENTIFICEER - Welk object heeft een blauw lichtje?",
-        "IMITATIE - Maak het geluid van een server",
-        "CODE - Geef de autorisatiecode"
+        "SCAN THE ROOM - Describe what you see",
+        "IDENTIFY - Which object has a blue light?",
+        "IMITATE - Make the sound of a server",
+        "CODE - Give the authorization code"
     };
     
     [Header("Expected Answers (hints for LLM)")]
     public string[] expectedConcepts = {
-        "serverruimte, computers, kasten",
-        "serverkast, blauw led, indicator",
-        "zoemen, brommen, electronisch",
-        "4821, autorisatie, code"
+        "server room, computers, cabinets",
+        "server cabinet, blue LED, indicator",
+        "humming, buzzing, electronic",
+        "4821, authorization, code"
     };
     
     [Header("UI")]
@@ -83,8 +83,8 @@ public class VoiceRiddlePuzzle : MonoBehaviour
         if (!isActive || isCompleted || llmService == null) return;
         
         string context = $"Security Bypass Puzzel: {puzzleName}. " +
-                       $"Je bent in een serverruimte en moet het beveiligingssysteem omzeilen. " +
-                       $"Je bent nu bij hoofdstuk {currentStage + 1} van {stageDescriptions.Length}.";
+                       $"You are in a server room and need to bypass the security system. " +
+                       $"You are at chapter {currentStage + 1} of {stageDescriptions.Length}.";
         
         llmService.EvaluatePuzzleResponse(context, stageDescriptions[currentStage], input, (result) =>
         {
@@ -110,7 +110,7 @@ public class VoiceRiddlePuzzle : MonoBehaviour
             UpdateDisplay();
             if (feedbackDisplay != null)
             {
-                feedbackDisplay.text = "✓ Stap " + currentStage + " voltooid!";
+                feedbackDisplay.text = "✓ Step " + currentStage + " completed!";
                 StartCoroutine(ClearFeedback());
             }
         }
@@ -123,7 +123,7 @@ public class VoiceRiddlePuzzle : MonoBehaviour
         if (puzzleDisplay != null)
         {
             puzzleDisplay.color = Color.green;
-            puzzleDisplay.text = $">_ {puzzleName}\n>_ PUZZEL VOLTOOID!\n>_ BEVEILIGING OVERRIDDEN\n>_ TOEGANG VERLEEND";
+            puzzleDisplay.text = $">_ {puzzleName}\n>_ PUZZLE COMPLETE!\n>_ SECURITY OVERRIDDEN\n>_ ACCESS GRANTED";
         }
         
         if (connectedDoor != null)
@@ -143,9 +143,9 @@ public class VoiceRiddlePuzzle : MonoBehaviour
         if (puzzleDisplay != null && currentStage < stageDescriptions.Length)
         {
             puzzleDisplay.text = $">_ {puzzleName}\n" +
-                                $">_ STAP {currentStage + 1}/{stageDescriptions.Length}\n" +
+                                $">_ STEP {currentStage + 1}/{stageDescriptions.Length}\n" +
                                 $">_ {stageDescriptions[currentStage]}\n\n" +
-                                $">_ Verwacht: {expectedConcepts[currentStage]}";
+                                 $">_ Expected: {expectedConcepts[currentStage]}";
         }
     }
     

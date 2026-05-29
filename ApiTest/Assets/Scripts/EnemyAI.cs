@@ -143,7 +143,7 @@ public class EnemyAI : MonoBehaviour
             detected = true;
             OnDetected?.Invoke();
             if (detectionText != null)
-                detectionText.text = "GEDETECTEERD!";
+                    detectionText.text = "DETECTED!";
             OnAlert?.Invoke();
             GameOverManager manager = FindObjectOfType<GameOverManager>();
             if (manager != null)

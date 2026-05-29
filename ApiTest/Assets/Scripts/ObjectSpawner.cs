@@ -26,7 +26,7 @@ public class ObjectSpawner : MonoBehaviour
         string prefabName = aiResult.prefab_name;
         if (string.IsNullOrEmpty(prefabName))
         {
-            onStatusUpdate?.Invoke("Transformatie mislukt: AI gaf geen object naam.");
+            onStatusUpdate?.Invoke("Transform failed: AI gave no object name.");
             return;
         }
         prefabName = prefabName.Trim();
@@ -34,14 +34,14 @@ public class ObjectSpawner : MonoBehaviour
 
         if (prefabName.ToLower() == "none")
         {
-            onStatusUpdate?.Invoke("Transformatie mislukt: Object niet in database.");
+            onStatusUpdate?.Invoke("Transform failed: Object not in database.");
             return;
         }
 
         GameObject loadedPrefab = Resources.Load<GameObject>("Props/" + prefabName);
         if (loadedPrefab == null)
         {
-            onStatusUpdate?.Invoke($"Error: Prefab '{prefabName}' bestaat niet in de Resources map.");
+            onStatusUpdate?.Invoke($"Error: Prefab '{prefabName}' not found in Resources.");
             Debug.LogError($"ObjectSpawner: Prefab 'Props/{prefabName}' niet gevonden, spawn geweigerd.");
             return;
         }
@@ -79,7 +79,7 @@ public class ObjectSpawner : MonoBehaviour
             isMorphed = true;
         }
 
-        onStatusUpdate?.Invoke("Succes! Getransformeerd in " + prefabName + "!");
+        onStatusUpdate?.Invoke("Success! Transformed into " + prefabName + "!");
     }
 
     public void Unmorph()

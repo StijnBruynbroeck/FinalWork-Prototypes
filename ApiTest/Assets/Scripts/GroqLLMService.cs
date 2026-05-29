@@ -102,7 +102,7 @@ public class GroqLLMService : MonoBehaviour
             else
             {
                 Debug.LogError("Error met LLM API voor puzzel: " + request.error);
-                onComplete?.Invoke(new PuzzleResult { correct = false, feedback = "API fout, probeer opnieuw", hint = "Controleer je verbinding of lokale server" });
+                onComplete?.Invoke(new PuzzleResult { correct = false, feedback = "API error, try again", hint = "Check your connection or local server" });
             }
         }
     }
@@ -223,7 +223,7 @@ public class GroqLLMService : MonoBehaviour
             fallbackResult.door_action = "none";
         }
 
-        fallbackResult.reason = "Offline Fallback Gebruikt";
+        fallbackResult.reason = "Offline fallback used";
         return fallbackResult;
     }
 }

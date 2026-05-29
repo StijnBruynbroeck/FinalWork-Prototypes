@@ -22,11 +22,11 @@ public class GroqAudioService : MonoBehaviour
         if (audioData == null || audioData.Length < 1000) 
         {
             Debug.LogWarning("Audio was te kort of leeg! Houd de 'T' toets langer ingedrukt.");
-            onStatus?.Invoke("Opname te kort.");
+            onStatus?.Invoke("Recording too short.");
             yield break;
         }
 
-        onStatus?.Invoke("Verzenden naar lokale Whisper...");
+            onStatus?.Invoke("Sending to local Whisper...");
 
         List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
         
@@ -44,14 +44,14 @@ public class GroqAudioService : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                onStatus?.Invoke("Transcriptie succesvol!");
+                onStatus?.Invoke("Transcription successful!");
                 WhisperResponse response = JsonUtility.FromJson<WhisperResponse>(request.downloadHandler.text);
                 onComplete?.Invoke(response.text);
             }
             else
             {
                 Debug.LogError("Lokale Whisper Error: " + request.error + "\n" + request.downloadHandler.text);
-                onStatus?.Invoke("Fout bij transcriptie.");
+                onStatus?.Invoke("Transcription error.");
             }
         }
     }
