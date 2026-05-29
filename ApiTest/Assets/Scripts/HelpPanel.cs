@@ -53,7 +53,7 @@ public class HelpPanel : MonoBehaviour
         Color dimGreen = new Color(0.04f, 1f, 0f, 0.6f);
 
         string content =
-            "<color=#00FF41>COMMANDS</color>     [<color=#00FF41>H</color>]\n\n" +
+            "<color=#00FF41>COMMANDS</color>\n\n" +
             "<color=#00FF41>MORPH</color>\n" +
             "<color=#FFFFFFCC>  \"turn into chair\"\n" +
             "  \"turn into table\"</color>\n\n" +
@@ -66,7 +66,7 @@ public class HelpPanel : MonoBehaviour
             "  (ACCESS, OVERRIDE, ...)</color>\n\n" +
             "<color=#00FF41>PUZZLE</color>\n" +
             "<color=#FFFFFFCC>  volg scherm-instructies</color>\n\n" +
-            "<size=14><color=#00FF4166>[ H ] hide/show</color></size>";
+            "<color=#00FF4166>[ H ] hide/show</color>";
 
         TMP_FontAsset font = Resources.Load<TMP_FontAsset>("Fonts & Materials/JetBrainsMono-Regular SDF");
         if (font == null)
@@ -83,7 +83,7 @@ public class HelpPanel : MonoBehaviour
         rootRt.anchorMax = new Vector2(1f, 0.5f);
         rootRt.pivot = new Vector2(1f, 0.5f);
         rootRt.anchoredPosition = new Vector2(-20f, 60f);
-        rootRt.sizeDelta = new Vector2(300f, 380f);
+        rootRt.sizeDelta = new Vector2(320f, 420f);
         Image borderImg = panelRoot.AddComponent<Image>();
         borderImg.color = green;
 
