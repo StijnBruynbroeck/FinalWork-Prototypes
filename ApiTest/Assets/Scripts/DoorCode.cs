@@ -67,8 +67,6 @@ public class DoorCode : MonoBehaviour
         if (!other.CompareTag("Player")) return;
         playerInRange = true;
         ToonCanvas();
-        if (doorController != null && !doorController.IsLocked())
-            doorController.OpenDoor();
     }
 
     void OnTriggerExit(Collider other)
@@ -169,20 +167,22 @@ public class DoorCode : MonoBehaviour
 
     private void CheckCode()
     {
-        if (codeDisplayText == null) return;
-
         if (enteredCode.Length < correctCode.Length)
         {
-            string display = "";
-            for (int i = 0; i < enteredCode.Length; i++)
-                display += "*";
-            codeDisplayText.text = display;
+            if (codeDisplayText != null)
+            {
+                string display = "";
+                for (int i = 0; i < enteredCode.Length; i++)
+                    display += "*";
+                codeDisplayText.text = display;
+            }
             return;
         }
 
         if (enteredCode == correctCode)
         {
-            codeDisplayText.text = "<color=green>Approved</color>";
+            if (codeDisplayText != null)
+                codeDisplayText.text = "<color=green>Approved</color>";
             hasBeenUnlocked = true;
 
             if (doorController != null)
@@ -193,7 +193,8 @@ public class DoorCode : MonoBehaviour
         }
         else
         {
-            codeDisplayText.text = "<color=red>Wrong Code</color>";
+            if (codeDisplayText != null)
+                codeDisplayText.text = "<color=red>Wrong Code</color>";
             Invoke(nameof(ResetCode), 1.5f);
         }
     }

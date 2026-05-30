@@ -37,12 +37,14 @@ public class VoiceAppController : MonoBehaviour
         if (zoneDetection == null)
             zoneDetection = FindObjectOfType<ZoneDetectionManager>();
 
-        if (specificDoor == null)
+        if (specificDoor == null || !specificDoor.gameObject.activeInHierarchy)
         {
+            specificDoor = null;
             Animator[] alleAnimators = FindObjectsOfType<Animator>(true);
             Debug.Log($"Zoeken naar Animator met 'sphere' controller... ({alleAnimators.Length} animators gevonden)");
             foreach (Animator a in alleAnimators)
             {
+                if (!a.gameObject.activeInHierarchy) continue;
                 Debug.Log($"  Animator op '{a.gameObject.name}', controller={a.runtimeAnimatorController?.name}");
                 if (a.runtimeAnimatorController != null && a.runtimeAnimatorController.name.ToLower().Contains("sphere"))
                 {
@@ -61,6 +63,7 @@ public class VoiceAppController : MonoBehaviour
             foreach (string naam in zoekNamen)
             {
                 GameObject obj = GameObject.Find(naam);
+                if (obj != null && !obj.activeInHierarchy) continue;
                 Debug.Log($"Zoek naar '{naam}': {(obj != null ? $"gevonden op {obj.transform.parent?.name ?? "root"}" : "niet gevonden")}");
                 if (obj != null)
                 {
