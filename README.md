@@ -1,8 +1,8 @@
-# Neuro-Filter AI
+# Natural User Interface
 
 > The Unity project is located in the `ApiTest/` subdirectory. All file paths below are relative to the repository root.
 
-A first-person stealth game developed in Unity 6 where the player uses voice commands to morph into furniture objects, avoid an enemy AI, hack terminals, and solve puzzles. All AI processing runs locally using Ollama (LLM) and Whisper.cpp (speech-to-text), ensuring privacy and low latency.
+A Unity 6 first-person stealth game where the player uses voice commands to morph into furniture objects, avoid an enemy AI, hack terminals, and solve puzzles. All AI processing runs locally using Ollama (LLM) and Whisper.cpp (speech-to-text), ensuring privacy and low latency. Formerly known as "Neuro-Filter AI." developed in Unity 6 where the player uses voice commands to morph into furniture objects, avoid an enemy AI, hack terminals, and solve puzzles. All AI processing runs locally using Ollama (LLM) and Whisper.cpp (speech-to-text), ensuring privacy and low latency.
 
 ## Table of Contents
 
