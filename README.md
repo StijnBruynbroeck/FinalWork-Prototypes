@@ -1,5 +1,7 @@
 # Neuro-Filter AI
 
+> The Unity project is located in the `ApiTest/` subdirectory. All file paths below are relative to the repository root.
+
 A first-person stealth game developed in Unity 6 where the player uses voice commands to morph into furniture objects, avoid an enemy AI, hack terminals, and solve puzzles. All AI processing runs locally using Ollama (LLM) and Whisper.cpp (speech-to-text), ensuring privacy and low latency.
 
 ## Table of Contents
@@ -160,9 +162,9 @@ curl -X POST "http://localhost:9090/inference" `
 ### 5. Open in Unity
 
 1. Open Unity Hub
-2. Click "Open" and browse to the `ApiTest` directory
+2. Click "Open" and browse to the `ApiTest` directory (inside this repository)
 3. Wait for the project to load and compile all scripts
-4. Open `Assets/Scenes/TestScene.unity`
+4. Open `ApiTest/Assets/Scenes/TestScene.unity`
 5. Press Play in the Unity Editor
 6. Hold T to speak into your microphone, release to process
 
@@ -330,7 +332,7 @@ The command routing uses a Chain of Responsibility pattern: each handler checks 
 
 ### Scripts Overview
 
-All scripts are located in `Assets/Scripts/`. Total: approximately 5,400 lines across 32 C# files.
+All scripts are located in `ApiTest/Assets/Scripts/`. Total: approximately 5,400 lines across 32 C# files.
 
 | File | Lines | Role |
 |------|-------|------|
@@ -370,13 +372,13 @@ All scripts are located in `Assets/Scripts/`. Total: approximately 5,400 lines a
 
 | Scene | Purpose |
 |-------|---------|
-| `Assets/Scenes/TestScene.unity` | Main game scene with all systems active |
-| `Assets/Scenes/SampleScene.unity` | Legacy debug/test scene (also in root Assets/Scenes/) |
-| `Assets/Scenes/FinalWork_WorkSpace.unity` | Work-in-progress scene |
+| `ApiTest/Assets/Scenes/TestScene.unity` | Main game scene with all systems active |
+| `ApiTest/Assets/Scenes/SampleScene.unity` | Legacy debug/test scene |
+| `ApiTest/Assets/Scenes/FinalWork_WorkSpace.unity` | Work-in-progress scene |
 
 ### Furniture Prefabs
 
-10 furniture prefabs stored in `Assets/Resources/Props/`:
+10 furniture prefabs stored in `ApiTest/Assets/Resources/Props/`:
 
 `BathTub01`, `Bed01`, `Bench`, `Chair01`, `Closet01`, `Cushion01`, `Drawer01`, `OfficeChair`, `Sofa01`, `Table01`
 
@@ -441,7 +443,7 @@ The dashboard uses a terminal/hacker aesthetic matching the game's visual theme.
 
 ### Analytics Logging
 
-`AnalyticsManager.cs` writes to `Assets/LLM_Performance_Log.csv` with the following columns:
+`AnalyticsManager.cs` writes to `ApiTest/Assets/LLM_Performance_Log.csv` with the following columns:
 
 | Column | Description |
 |--------|-------------|
@@ -465,7 +467,7 @@ Results are logged to the CSV. A 4-second delay between requests prevents rate l
 
 ## References and Credits
 
-A comprehensive references file is maintained at `Assets/Scripts/Bronnen.txt` containing all academic sources, API documentation, tutorials, and asset licenses.
+A comprehensive references file is maintained at `ApiTest/Assets/Scripts/Bronnen.txt` containing all academic sources, API documentation, tutorials, and asset licenses.
 
 ### External APIs and Services
 
@@ -515,15 +517,15 @@ A comprehensive references file is maintained at `Assets/Scripts/Bronnen.txt` co
 
 | Item | Status |
 |------|--------|
-| **LICENSE file** | Not present in the repository. Licenses are documented in `Bronnen.txt` but no formal LICENSE file exists. |
-| **Build settings** | Only `SampleScene.unity` is added to the build settings. `TestScene.unity` (the main game scene) must be added before building. |
+| **LICENSE file** | Not present in the repository. Licenses are documented in `ApiTest/Assets/Scripts/Bronnen.txt` but no formal LICENSE file exists. |
+| **Build settings** | Only `ApiTest/Assets/Scenes/SampleScene.unity` is added to the build settings. `ApiTest/Assets/Scenes/TestScene.unity` (the main game scene) must be added before building. |
 | **Mixed language code** | Variable names and comments in several scripts mix Dutch and English (e.g., `RouteerNaarDeur`, `huidigeFase`, `IsInBereik`, `ZoekTekstVeld`). User-facing text was translated to English in the latest commits. |
 | **Misleading class names** | `GroqLLMService` and `GroqAudioService` communicate with Ollama and Whisper.cpp respectively, not with Groq. The names are legacy and no longer reflect the actual endpoints. |
-| **Hardcoded API key** | `ApiCall.cs` (line 10) contains a hardcoded AssemblyAI API key: `fe0d18f4e26d4d44be37680f7e88e7d4`. This script is legacy and unused, but the key should still be removed or externalized. |
+| **Hardcoded API key** | `ApiTest/Assets/Scripts/ApiCall.cs` (line 10) contains a hardcoded AssemblyAI API key: `fe0d18f4e26d4d44be37680f7e88e7d4`. This script is legacy and unused, but the key should still be removed or externalized. |
 | **No unit tests** | Only `AutomatedTester.cs` exists for integration-style testing. No NUnit/Unity Test Framework tests are present. |
 | **No CI/CD configuration** | No GitHub Actions, GitLab CI, or other pipeline configuration is included. |
 | **No CHANGELOG** | Git history is available but no formal changelog file exists. |
 | **No demo media** | The README would benefit from screenshots or a GIF demonstrating gameplay. |
 | **LLM offline fallback** | When Ollama is unreachable, a simple keyword fallback runs. This can produce unreliable results. The game has no grace period or retry logic for server restarts. |
-| **Empty/unused folders** | `Assets/fonts/` contains webfonts and variable TTF files that may not be used in the game. |
+| **Empty/unused folders** | `ApiTest/Assets/fonts/` contains webfonts and variable TTF files that may not be used in the game. |
 | **No error recovery** | If Whisper.cpp or Ollama crashes mid-game, there is no recovery mechanism beyond restarting the Unity scene. |
