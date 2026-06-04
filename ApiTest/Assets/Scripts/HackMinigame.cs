@@ -121,7 +121,7 @@ public class HackMinigame : MonoBehaviour
     {
         string lower = text.ToLower().Trim();
 
-        // Voice: zoek naar brackets in text (Whisper zet ze soms als "open bracket", "close bracket")
+       
         for (int i = 0; i < dudChars.Length; i += 2)
         {
             char open = dudChars[i];
@@ -146,7 +146,7 @@ public class HackMinigame : MonoBehaviour
             }
         }
 
-        // Voice fallback: speler zegt gewoon "dud", "remove dud", "reset attempt" etc.
+        // Voice fallback: player says "dud", "reset attempt", etc.
         if (lower.Contains("dud") || lower.Contains("remove fake"))
         {
             RemoveDuds();

@@ -1,0 +1,257 @@
+fileFormatVersion: 2
+guid: 9e0464b113bc8ed45bcf48c5b743467a
+ModelImporter:
+  serializedVersion: 22200
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Aluminium Worn
+    second: {fileID: 2100000, guid: d821fb1928ea50e49ad963d8e84ae05a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Black Chipped Metal
+    second: {fileID: 2100000, guid: d8a6ed439d2e80e4ca0ee646a4ca799b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Black matte metal
+    second: {fileID: 2100000, guid: f8212da6bceab6343a1e81c94a21989b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: DecrepitWall
+    second: {fileID: 2100000, guid: 85698edf3b9eb684ca43b935d2e41fa6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Employee Badge
+    second: {fileID: 2100000, guid: 719a615fe70386f48a3e44b3670f4e6f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Green Plastic Transparent
+    second: {fileID: 2100000, guid: be6015316edcf3e41aefff3073e88790, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Keypad Buttons
+    second: {fileID: 2100000, guid: 0ecbb41ba9c38704db784dd63dbb7194, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Worn Painted Metal
+    second: {fileID: 2100000, guid: 02a31e5eef5e62848a8b05f99383bd83, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Aluminium_Worn_diffuse_baked
+    second: {fileID: 2800000, guid: b8a17a5d0601ccf40915c0753db2efb0, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Aluminium_Worn_normal_baked
+    second: {fileID: 2800000, guid: 0f621a7ba14f9a745859a4113a060e4e, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Aluminium_Worn_roughness_baked
+    second: {fileID: 2800000, guid: 7c63c94ee8121ff48b77984420f901a6, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Black_Chipped_Metal_diffuse_baked
+    second: {fileID: 2800000, guid: 90314bf95ea6308469a159a19ff34bff, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Black_Chipped_Metal_normal_baked
+    second: {fileID: 2800000, guid: 97fe0ce00cd9312488b54320a5cb00db, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Black_Chipped_Metal_roughness_baked
+    second: {fileID: 2800000, guid: 56f3aef9a64a0fe4ebd85d68c94cf876, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Black_matte_metal_diffuse_baked
+    second: {fileID: 2800000, guid: 38c90ce87535ed941bb15e4b0b7a9c0c, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Black_matte_metal_normal_baked
+    second: {fileID: 2800000, guid: 3f2301abe87dade48806dfc8fab9e7b8, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Black_matte_metal_roughness_baked
+    second: {fileID: 2800000, guid: b81a3655503ebdc4195fd72a7789faed, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Employee_Badge_diffuse_baked
+    second: {fileID: 2800000, guid: 6243a611d9ee00443ab4b8db5a3b263f, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Employee_Badge_normal_baked
+    second: {fileID: 2800000, guid: 9edc2dd00e616c44bb4a21c167d6d2e1, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Employee_Badge_roughness_baked
+    second: {fileID: 2800000, guid: a519f2bebcdb32b40a5efd6d31466392, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Green_Plastic_Transparent_diffuse_baked
+    second: {fileID: 2800000, guid: dee834efc82f317478f3cb5154905602, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Green_Plastic_Transparent_normal_baked
+    second: {fileID: 2800000, guid: 3c8cc03721bad9044821005894e71cba, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Green_Plastic_Transparent_roughness_baked
+    second: {fileID: 2800000, guid: 0d313790083490c4bbfa9fc444c44b2e, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Keypad_Buttons_diffuse_baked
+    second: {fileID: 2800000, guid: e609731332fe91c49927b5c1b83a2c2d, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Keypad_Buttons_normal_baked
+    second: {fileID: 2800000, guid: bdefdcd4c29daa14a98c61b3ce37727b, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Keypad_Buttons_roughness_baked
+    second: {fileID: 2800000, guid: f73d095cfc6742040a031100cbdef129, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Worn_Painted_Metal_diffuse_baked
+    second: {fileID: 2800000, guid: ec9f45f12e629fd4881b9855d588fc05, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Worn_Painted_Metal_normal_baked
+    second: {fileID: 2800000, guid: e4d1b2cc2e5e5674d82bfd528b1652df, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Worn_Painted_Metal_roughness_baked
+    second: {fileID: 2800000, guid: aa7a5675e60be6a4caca681993569d7c, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: decrepit_wallpaper_diff_2k
+    second: {fileID: 2800000, guid: 34c5b4a034425ca40898e08f4bf8fb74, type: 3}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

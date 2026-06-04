@@ -7,9 +7,8 @@ public class NeuroFilterAI : MonoBehaviour
     private bool isInvestigating = false;
 
     [Header("Patrol Settings")]
-    public Transform[] patrolPoints; // Sleep hier lege GameObjects in als 'waypoints'
+    public Transform[] patrolPoints; 
     private int currentPointIndex = 0;
-
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -21,7 +20,6 @@ public class NeuroFilterAI : MonoBehaviour
 
     void Update()
     {
-        // Als hij gewoon aan het patrouilleren is en zijn bestemming heeft bereikt
         if (!isInvestigating && !agent.pathPending && agent.remainingDistance < 0.5f)
         {
             GoToNextPoint();
@@ -36,10 +34,8 @@ public class NeuroFilterAI : MonoBehaviour
         agent.SetDestination(patrolPoints[currentPointIndex].position);
     }
 
-    // DEZE FUNCTIE WORDT LATER DOOR JOUW SPRAAK-SCRIPT AANGEROEPEN
     public void InvestigateAnomaly(Vector3 targetLocation, int plausibilityScore)
     {
-        // Als de score laag is, is de actie onlogisch! Tijd om aan te vallen.
         if (plausibilityScore < 50) 
         {
             isInvestigating = true;

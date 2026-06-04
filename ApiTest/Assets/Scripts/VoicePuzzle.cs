@@ -95,7 +95,7 @@ public class VoicePuzzle : MonoBehaviour
         if (puzzelScherm != null)
         {
             puzzelScherm.color = Color.red;
-            puzzelScherm.text = $">_ ERROR: INVALID CODE\n>_ INPUT: \"{input}\"\n>_ TOEGANG GEWEIGERD";
+            puzzelScherm.text = $">_ ERROR: INVALID CODE\n>_ INPUT: \"{input}\"\n>_ ACCESS DENIED";
         }
 
         StartCoroutine(ResetPuzzelKleur());
