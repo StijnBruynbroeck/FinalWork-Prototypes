@@ -59,7 +59,7 @@ public class MorphCamera : MonoBehaviour
         }
         else if (!isFirstPerson && thirdPersonCamera != null)
         {
-            // Orbit the camera around the player (morph object stays static)
+            // Orbit camera around player
             Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);
             thirdPersonCamera.transform.localPosition = orbit * initialThirdPersonOffset;
             thirdPersonCamera.transform.LookAt(transform.position);

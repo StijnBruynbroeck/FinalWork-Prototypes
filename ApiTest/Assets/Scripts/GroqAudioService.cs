@@ -11,7 +11,7 @@ public class GroqAudioService : MonoBehaviour
     [Header("Local Whisper Settings")]
     private string localEndpoint = "http://localhost:9090/inference";
 
-    // Zelfde opzet als je oude script, zodat je het makkelijk kan inpluggen!
+    
     public void TranscribeAudio(byte[] audioData, Action<string> onTranscriptionComplete, Action<string> onStatusUpdate)
     {
         StartCoroutine(SendAudioToLocal(audioData, onTranscriptionComplete, onStatusUpdate));
@@ -58,7 +58,7 @@ public class GroqAudioService : MonoBehaviour
 
     void OnDisable()
     {
-        // Breek de actieve download af als we Unity op Stop zetten
+        // Abort active download when Unity stops
         if (activeRequest != null && !activeRequest.isDone)
         {
             activeRequest.Abort();

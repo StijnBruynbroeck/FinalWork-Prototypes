@@ -53,7 +53,16 @@ public class HelpPanel : MonoBehaviour
         Color dimGreen = new Color(0.04f, 1f, 0f, 0.6f);
 
         string content =
-            "<color=#00FF41>COMMANDS</color>\n\n" +
+            "<color=#00FF41>OBJECTIVE</color>\n" +
+            "<color=#FFFFFFCC>  Change into objects to\n" +
+            "  avoid the enemy</color>\n\n" +
+            "<color=#00FF41>MOVEMENT</color>\n" +
+            "<color=#FFFFFFCC>  [ W A S D ] move\n" +
+            "  [ Mouse ] look around</color>\n\n" +
+            "<color=#00FF41>ACTIONS</color>\n" +
+            "<color=#FFFFFFCC>  [ T ] talk to change\n" +
+            "       into objects\n" +
+            "  [ H ] hide/show help</color>\n\n" +
             "<color=#00FF41>MORPH</color>\n" +
             "<color=#FFFFFFCC>  \"turn into chair\"\n" +
             "  \"turn into table\"</color>\n\n" +
@@ -65,8 +74,7 @@ public class HelpPanel : MonoBehaviour
             "<color=#FFFFFFCC>  say grid words\n" +
             "  (ACCESS, OVERRIDE, ...)</color>\n\n" +
             "<color=#00FF41>PUZZLE</color>\n" +
-            "<color=#FFFFFFCC>  follow on-screen prompts</color>\n\n" +
-            "<color=#00FF4166>[ H ] hide/show</color>";
+            "<color=#FFFFFFCC>  follow on-screen prompts</color>";
 
         TMP_FontAsset font = Resources.Load<TMP_FontAsset>("Fonts & Materials/JetBrainsMono-Regular SDF");
         if (font == null)
@@ -82,8 +90,8 @@ public class HelpPanel : MonoBehaviour
         rootRt.anchorMin = new Vector2(1f, 0.5f);
         rootRt.anchorMax = new Vector2(1f, 0.5f);
         rootRt.pivot = new Vector2(1f, 0.5f);
-        rootRt.anchoredPosition = new Vector2(-20f, 60f);
-        rootRt.sizeDelta = new Vector2(320f, 420f);
+        rootRt.anchoredPosition = new Vector2(-20f, 77.5f);
+        rootRt.sizeDelta = new Vector2(320f, 605f);
         Image borderImg = panelRoot.AddComponent<Image>();
         borderImg.color = green;
 

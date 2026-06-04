@@ -7,7 +7,7 @@ using System;
 public class GroqLLMService : MonoBehaviour
 {
     [Header("Ollama Local Settings")]
-    public string apiKey = "ollama"; // Geen echte key nodig lokaal
+    public string apiKey = "ollama"; // No real key needed locally
     private string localEndpoint = "http://localhost:11434/v1/chat/completions";
 
     private static string cachedPrefabList = null;
@@ -52,7 +52,7 @@ public class GroqLLMService : MonoBehaviour
 
     private IEnumerator SendToLLMForPuzzle(string puzzleContext, string stageDescription, string playerInput, Action<PuzzleResult> onComplete)
     {
-        // Volledig Engelse prompt, maar we vragen de AI expliciet om Nederlandse feedback/hints terug te geven
+        
         string systemPrompt = "You are a puzzle master in a sci-fi stealth game. " +
                               "The player must solve a multi-step puzzle using voice commands. " +
                               "Evaluate if the player gives the correct answer for the current step. " +
@@ -125,11 +125,21 @@ public class GroqLLMService : MonoBehaviour
                               "'chair'/'seat'/'stool' → Chair01. 'office chair' → OfficeChair. " +
                               "'couch'/'sofa' → Sofa01. 'bed'/'cot' → Bed01. " +
                               "'table'/'desk' → Table01. " +
-                              "'closet'/'cabinet'/'locker'/'wardrobe' → Closet01. " +
+                              "'closet'/'locker'/'wardrobe' → Closet01. " +
+                              "'cabinet'/'cupboard'/'kitchen cabinet' → KitchenCabinet01. " +
                               "'bath'/'tub'/'bathtub' → BathTub01. " +
                               "'cushion'/'pillow' → Cushion01. " +
                               "'drawer'/'chest' → Drawer01. " +
                               "'bench' → Bench. " +
+                              "'toilet'/'wc'/'lavatory' → Toilet01. " +
+                              "'sink'/'basin'/'washbasin' → WashBasin01. " +
+                              "'shower' → Shower01. " +
+                              "'vanity'/'bathroom vanity' → BathroomVanity01. " +
+                              "'fridge'/'refrigerator'/'freezer' → Refrigerator01. " +
+                              "'oven' → Oven01. " +
+                              "'stove'/'cooker' → Stove01. " +
+                              "'kitchen sink' → KitchenSink01. " +
+                              "'microwave' → Microwave01. " +
                               "CRITICAL: 'chair' → Chair01, NEVER Sofa01. 'sofa' → Sofa01, NEVER Chair01. " +
                               "Return exactly one prefab name from the list. If no furniture → prefab_name='none'. " +
                               "4) door_action='none' unless player says open/close door. " +
@@ -190,7 +200,6 @@ public class GroqLLMService : MonoBehaviour
         gesprokenTekst = gesprokenTekst.ToLower();
         LLMResult fallbackResult = new LLMResult(); 
         
-        // Nu aangepast voor Engelse spraakherkenning
         if (gesprokenTekst.Contains("unmorph") || gesprokenTekst.Contains("turn me back") || gesprokenTekst.Contains("revert") || gesprokenTekst.Contains("change me back"))
         {
             fallbackResult.prefab_name = "none";
@@ -198,16 +207,124 @@ public class GroqLLMService : MonoBehaviour
             fallbackResult.door_action = "none";
             fallbackResult.unmorph = true;
         }
-        else if (gesprokenTekst.Contains("server") || gesprokenTekst.Contains("cabinet"))
+        else if (gesprokenTekst.Contains("toilet") || gesprokenTekst.Contains("wc") || gesprokenTekst.Contains("lavatory"))
         {
-            fallbackResult.prefab_name = "closet_001"; 
-            fallbackResult.score = 90; 
+            fallbackResult.prefab_name = "Toilet01";
+            fallbackResult.score = 75;
             fallbackResult.door_action = "none";
         }
-        else if (gesprokenTekst.Contains("chair") || gesprokenTekst.Contains("desk"))
+        else if (gesprokenTekst.Contains("sink") || gesprokenTekst.Contains("basin") || gesprokenTekst.Contains("washbasin"))
         {
-            fallbackResult.prefab_name = "lounge_chair_001";
-            fallbackResult.score = 80; 
+            fallbackResult.prefab_name = "WashBasin01";
+            fallbackResult.score = 75;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("shower"))
+        {
+            fallbackResult.prefab_name = "Shower01";
+            fallbackResult.score = 70;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("vanity"))
+        {
+            fallbackResult.prefab_name = "BathroomVanity01";
+            fallbackResult.score = 70;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("fridge") || gesprokenTekst.Contains("refrigerator") || gesprokenTekst.Contains("freezer"))
+        {
+            fallbackResult.prefab_name = "Refrigerator01";
+            fallbackResult.score = 75;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("oven"))
+        {
+            fallbackResult.prefab_name = "Oven01";
+            fallbackResult.score = 70;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("stove") || gesprokenTekst.Contains("cooker"))
+        {
+            fallbackResult.prefab_name = "Stove01";
+            fallbackResult.score = 70;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("kitchen sink"))
+        {
+            fallbackResult.prefab_name = "KitchenSink01";
+            fallbackResult.score = 70;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("microwave"))
+        {
+            fallbackResult.prefab_name = "Microwave01";
+            fallbackResult.score = 70;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("cabinet") || gesprokenTekst.Contains("cupboard") || gesprokenTekst.Contains("kitchen cabinet"))
+        {
+            fallbackResult.prefab_name = "KitchenCabinet01";
+            fallbackResult.score = 80;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("closet") || gesprokenTekst.Contains("locker") || gesprokenTekst.Contains("wardrobe") || gesprokenTekst.Contains("server"))
+        {
+            fallbackResult.prefab_name = "Closet01";
+            fallbackResult.score = 90;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("chair") || gesprokenTekst.Contains("seat") || gesprokenTekst.Contains("stool"))
+        {
+            fallbackResult.prefab_name = "Chair01";
+            fallbackResult.score = 80;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("desk") || gesprokenTekst.Contains("table"))
+        {
+            fallbackResult.prefab_name = "Table01";
+            fallbackResult.score = 80;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("bed") || gesprokenTekst.Contains("cot"))
+        {
+            fallbackResult.prefab_name = "Bed01";
+            fallbackResult.score = 75;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("sofa") || gesprokenTekst.Contains("couch"))
+        {
+            fallbackResult.prefab_name = "Sofa01";
+            fallbackResult.score = 80;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("bath") || gesprokenTekst.Contains("tub") || gesprokenTekst.Contains("bathtub"))
+        {
+            fallbackResult.prefab_name = "BathTub01";
+            fallbackResult.score = 75;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("cushion") || gesprokenTekst.Contains("pillow"))
+        {
+            fallbackResult.prefab_name = "Cushion01";
+            fallbackResult.score = 70;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("drawer") || gesprokenTekst.Contains("chest"))
+        {
+            fallbackResult.prefab_name = "Drawer01";
+            fallbackResult.score = 75;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("bench"))
+        {
+            fallbackResult.prefab_name = "Bench";
+            fallbackResult.score = 75;
+            fallbackResult.door_action = "none";
+        }
+        else if (gesprokenTekst.Contains("office chair"))
+        {
+            fallbackResult.prefab_name = "OfficeChair";
+            fallbackResult.score = 85;
             fallbackResult.door_action = "none";
         }
         else if (gesprokenTekst.Contains("open") && gesprokenTekst.Contains("door"))

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using System.Text.RegularExpressions;
 
@@ -37,16 +38,69 @@ public class DoorCode : MonoBehaviour
         if (codeDisplayText == null)
             codeDisplayText = GetComponentInChildren<TMP_Text>(true);
 
-        numpadCanvas = GameObject.Find("Numpad")?.GetComponent<Canvas>();
+        Canvas[] all = FindObjectsOfType<Canvas>(true);
+        foreach (Canvas c in all)
+        {
+            if (c.gameObject.name == "Numpad")
+            {
+                numpadCanvas = c;
+                break;
+            }
+        }
         if (numpadCanvas != null)
         {
             Debug.Log($"DoorCode: Numpad canvas gevonden, verbergen...");
+            SetupNumpadBorder();
             numpadCanvas.gameObject.SetActive(false);
         }
         else
         {
-            Debug.LogWarning("DoorCode: Numpad canvas NIET gevonden via GameObject.Find!");
+            Debug.LogWarning("DoorCode: Numpad canvas NIET gevonden via FindObjectsOfType!");
         }
+    }
+
+    private void SetupNumpadBorder()
+    {
+        Transform oldBg = numpadCanvas.transform.Find("Background");
+        if (oldBg == null) { Debug.LogError("DoorCode: Background not found"); return; }
+
+        if (numpadCanvas.transform.Find("CodeDisplayBorder") != null) return;
+
+        RectTransform oldRt = oldBg.GetComponent<RectTransform>();
+        Image oldImg = oldBg.GetComponent<Image>();
+        if (oldRt == null || oldImg == null) return;
+
+        int uiLayer = 5;
+
+        GameObject border = new GameObject("CodeDisplayBorder");
+        border.layer = uiLayer;
+        border.transform.SetParent(numpadCanvas.transform, false);
+        RectTransform borderRt = border.AddComponent<RectTransform>();
+        borderRt.anchorMin = oldRt.anchorMin;
+        borderRt.anchorMax = oldRt.anchorMax;
+        borderRt.pivot = oldRt.pivot;
+        borderRt.anchoredPosition = oldRt.anchoredPosition;
+        borderRt.sizeDelta = oldRt.sizeDelta + new Vector2(4, 4);
+        Image borderImg = border.AddComponent<Image>();
+        borderImg.sprite = null;
+        borderImg.type = Image.Type.Simple;
+        borderImg.color = new Color(0, 1f, 0.2549f);
+
+        GameObject fill = new GameObject("CodeDisplayFill");
+        fill.layer = uiLayer;
+        fill.transform.SetParent(border.transform, false);
+        RectTransform fillRt = fill.AddComponent<RectTransform>();
+        fillRt.anchorMin = Vector2.zero;
+        fillRt.anchorMax = Vector2.one;
+        fillRt.offsetMin = new Vector2(2f, 2f);
+        fillRt.offsetMax = new Vector2(-2f, -2f);
+        Image fillImg = fill.AddComponent<Image>();
+        fillImg.sprite = oldImg.sprite;
+        fillImg.type = Image.Type.Simple;
+        fillImg.color = oldImg.color;
+
+        border.transform.SetSiblingIndex(oldBg.GetSiblingIndex());
+        Object.Destroy(oldBg.gameObject);
     }
 
     private void SetupTrigger()

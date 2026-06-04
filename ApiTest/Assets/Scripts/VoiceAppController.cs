@@ -101,7 +101,7 @@ public class VoiceAppController : MonoBehaviour
     {
         if (Keyboard.current == null) return;
 
-        // R-toets voor unmorph
+        
         if (Keyboard.current.rKey.wasPressedThisFrame && spawner != null && spawner.IsMorphed)
         {
             spawner.Unmorph();
@@ -127,7 +127,7 @@ public class VoiceAppController : MonoBehaviour
         UpdateStatus("<color=red>● Recording...</color>");
         recorder.StartRecording();
         
-        // Trigger audio event - vijand hoort je beginnen met praten
+        
         AudioEventSystem.EmitSound(transform.position, voiceIntensity);
     }
 
@@ -137,7 +137,7 @@ public class VoiceAppController : MonoBehaviour
 
         UpdateStatus("Processing Audio...");
 
-        // Trigger audio event - vijand hoort je stoppen met praten
+        
         AudioEventSystem.EmitSound(transform.position, voiceIntensity * 0.5f);
 
         recorder.StopRecording((byte[] audioData) =>
@@ -156,7 +156,7 @@ public class VoiceAppController : MonoBehaviour
         lastSpokenText = cleaned;
         if (resultText != null) resultText.text = cleaned;
 
-        // --- 0. PRE-FILTER: reject known noise / garbage transcriptions ---
+        // Pre-filter: reject known noise transcriptions
         string lower = cleaned.ToLower();
         string[] noiseMarkers = { "[blank_audio]", "[inaudible]", "[silence]", "[noise]", "[music]", "[cough]" };
         foreach (var marker in noiseMarkers)
@@ -173,7 +173,7 @@ public class VoiceAppController : MonoBehaviour
             return;
         }
 
-        // --- 0a. TRANSCRIPTION CORRECTION (fix known Whisper mishearings) ---
+        // Correction: fix known Whisper mishearings
         bool corrected = false;
         if (lower.Contains("bye ") && lower.Contains("bass"))
         {
@@ -191,7 +191,7 @@ public class VoiceAppController : MonoBehaviour
             lower = cleaned.ToLower();
         }
 
-        // --- 0b. PRE-LLM UNMORPH CHECK (always runs, regardless of morph state) ---
+        // Pre-LLM unmorph check (always runs)
         string[] unmorphPatterns = { "unmorph", "on morph", "unmorpf", "unmorf", "a morph",
                                      "morph back", "change back", "turn back", "revert", "undo", "stop morph" };
         foreach (var pattern in unmorphPatterns)
@@ -211,16 +211,35 @@ public class VoiceAppController : MonoBehaviour
             }
         }
 
-        // --- 1. DIRECT DEUR COMMANDO ---
+        // End game check — always available
+        if (lower.Contains("end game") || lower.Contains("end the game"))
+        {
+            EndGameTerminal[] endTerminals = FindObjectsOfType<EndGameTerminal>();
+            foreach (var et in endTerminals)
+            {
+                if (et.TryEndSequence(cleaned))
+                {
+                    UpdateStatus("Ending game...");
+                    return;
+                }
+            }
+            UpdateStatus("No end terminal found in scene.");
+            return;
+        }
+
+       
         if (RouteerNaarDeur(cleaned)) return;
 
-        // --- 1a. DOOR CODE CHECK (spraakgestuurde code invoer) ---
+       
         if (RouteerNaarCode(cleaned)) return;
 
-        // --- 2. TERMINAL CHECK (actieve terminal waar speler bij staat) ---
+     
         if (RouteerNaarTerminal(cleaned)) return;
 
-        // --- 3. NIEUWE PUZZEL CHECK ---
+       
+        if (RouteerNaarEndTerminal(cleaned)) return;
+
+       
         VoiceRiddlePuzzle nieuwePuzzel = FindObjectOfType<VoiceRiddlePuzzle>();
         if (nieuwePuzzel != null && nieuwePuzzel.IsInRange && !nieuwePuzzel.IsCompleted)
         {
@@ -228,7 +247,7 @@ public class VoiceAppController : MonoBehaviour
             return;
         }
 
-        // --- 4. KAMER DEFINIEREN (dynamisch via zone detection) ---
+      
         string currentRoom = "Server Data Control Room";
         if (zoneDetection != null && zoneDetection.CurrentZone != null)
         {
@@ -237,13 +256,13 @@ public class VoiceAppController : MonoBehaviour
         }
         Debug.Log($"[VoiceApp] HUIDIGE ZONE CONTEXT: {currentRoom}");
 
-        // --- 5. LLM BEOORDELING ---
+        // LLM evaluation
         llmService.EvaluatePlausibility(currentRoom, cleaned, (llmResult) =>
         {
             timer.Stop();
             long latencyMs = timer.ElapsedMilliseconds;
 
-            // --- 5a. DEUR ACTIE VAN LLM ---
+            // Door action from LLM
             if (!string.IsNullOrEmpty(llmResult.door_action) && llmResult.door_action != "none")
             {
                 if (specificDoor != null)
@@ -262,7 +281,7 @@ public class VoiceAppController : MonoBehaviour
                 return;
             }
 
-            // --- 5b. UNMORPH CHECK ---
+            // Unmorph check
             if (llmResult.unmorph)
             {
                 if (spawner != null && spawner.IsMorphed)
@@ -277,7 +296,7 @@ public class VoiceAppController : MonoBehaviour
                 return;
             }
 
-            // --- 5c. KEYWORD FALLBACK (only when LLM returns nothing — true fallback) ---
+            // Keyword fallback when LLM returns nothing
             if (string.IsNullOrEmpty(llmResult.prefab_name) || llmResult.prefab_name.ToLower() == "none")
             {
                 string fallback = TryKeywordFallback(cleaned);
@@ -288,7 +307,7 @@ public class VoiceAppController : MonoBehaviour
                 }
             }
 
-            // --- 5d. VALIDATE PREFAB EXISTS before spawning ---
+            // Validate prefab exists before spawning
             if (!string.IsNullOrEmpty(llmResult.prefab_name) && llmResult.prefab_name.ToLower() != "none")
             {
                 GameObject prefab = Resources.Load<GameObject>("Props/" + llmResult.prefab_name);
@@ -301,17 +320,17 @@ public class VoiceAppController : MonoBehaviour
                 }
             }
 
-            // --- 5e. SPAWN OBJECT ---
+            // Spawn object
             spawner.ProcessTextAndSpawn(llmResult, UpdateStatus);
 
-            // --- 6. VIJAND MULTIPLIER ---
+            // Enemy suspicion multiplier
             EnemyVision vijandZicht = FindObjectOfType<EnemyVision>();
             if (vijandZicht != null)
             {
                 vijandZicht.SetLLMScoreMultiplier(llmResult.score);
             }
 
-            // --- 7. ANALYTICS ---
+            // Analytics
             if (analytics != null)
             {
                 analytics.LogData(lastSpokenText, llmResult.prefab_name, llmResult.score, latencyMs);
@@ -325,6 +344,20 @@ public class VoiceAppController : MonoBehaviour
         foreach (var t in terminals)
         {
             if (t.IsActief && t.ControleerWachtwoord(text))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool RouteerNaarEndTerminal(string text)
+    {
+        EndGameTerminal[] terminals = FindObjectsOfType<EndGameTerminal>();
+        foreach (var t in terminals)
+        {
+            if (t.TryEndSequence(text))
             {
                 return true;
             }
@@ -478,11 +511,22 @@ public class VoiceAppController : MonoBehaviour
         if (lower.Contains("chair") || lower.Contains("seat") || lower.Contains("stool") || lower.Contains("throne")) return "Chair01";
         if (lower.Contains("office") && (lower.Contains("chair") || lower.Contains("seat"))) return "OfficeChair";
         if (lower.Contains("couch") || lower.Contains("sofa")) return "Sofa01";
-        if (lower.Contains("closet") || lower.Contains("cabinet") || lower.Contains("locker") || lower.Contains("wardrobe") || lower.Contains("kast")) return "Closet01";
+        if (lower.Contains("closet") || lower.Contains("locker") || lower.Contains("wardrobe") || lower.Contains("kast")) return "Closet01";
         if (lower.Contains("bath") || lower.Contains("tub") || lower.Contains("bathtub")) return "BathTub01";
         if (lower.Contains("cushion") || lower.Contains("pillow")) return "Cushion01";
         if (lower.Contains("drawer") || lower.Contains("chest")) return "Drawer01";
         if (lower.Contains("bench") || lower.Contains("bunch")) return "Bench";
+        if (lower.Contains("toilet") || lower.Contains("wc") || lower.Contains("lavatory")) return "Toilet01";
+        if (lower.Contains("sink") || lower.Contains("basin") || lower.Contains("washbasin")) return "WashBasin01";
+        if (lower.Contains("shower")) return "Shower01";
+        if (lower.Contains("vanity")) return "BathroomVanity01";
+        if (lower.Contains("fridge") || lower.Contains("refrigerator") || lower.Contains("freezer")) return "Refrigerator01";
+        if (lower.Contains("oven")) return "Oven01";
+        if (lower.Contains("stove") || lower.Contains("cooker")) return "Stove01";
+        if (lower.Contains("kitchen sink")) return "KitchenSink01";
+        if (lower.Contains("microwave")) return "Microwave01";
+        if ((lower.Contains("kitchen") && lower.Contains("cabinet")) || lower.Contains("cupboard")) return "KitchenCabinet01";
+        if (lower.Contains("cabinet")) return "Closet01";
         return null;
     }
 

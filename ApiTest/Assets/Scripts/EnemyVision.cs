@@ -70,12 +70,10 @@ public class EnemyVision : MonoBehaviour
         
         if (inCone)
         {
-            
             RaycastHit hit;
-            
+
             if (Physics.Linecast(transform.position, player.position, out hit, obstacleMask))
             {
-                
                 if (hit.transform == player || hit.transform.CompareTag("Player"))
                 {
                     IsPlayerInSight = true;
@@ -83,13 +81,12 @@ public class EnemyVision : MonoBehaviour
                 }
                 else
                 {
-                    IsPlayerInSight = false; 
+                    IsPlayerInSight = false;
                 }
             }
             else
             {
-                
-                IsPlayerInSight = true; 
+                IsPlayerInSight = true;
                 LastKnownPlayerPosition = player.position;
             }
         }
@@ -112,7 +109,7 @@ public class EnemyVision : MonoBehaviour
         {
             float effectiveMultiplier = currentSuspicionMultiplier;
 
-            // Zone fit penalty: object doesn't belong here → override Even frozen suspicion
+            // Zone mismatch penalty overrides frozen suspicion
             if (zoneFitFactor < 1f)
             {
                 float zonePenalty = (1f - zoneFitFactor) * 4f;

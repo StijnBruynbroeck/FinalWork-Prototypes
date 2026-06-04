@@ -61,19 +61,19 @@ public class MicrophoneRecorder : MonoBehaviour
                 if(recordedClip != null) lastSamplePosition = recordedClip.samples;
             else 
             {
-                Debug.LogError("Opname mislukt");
+                Debug.LogError("Recording failed");
                 yield break;
             }
         }
 
-        // Audio trimmen
+        // Trim audio
         float[] fullSamples = new float[recordedClip.samples * recordedClip.channels];
         recordedClip.GetData(fullSamples, 0);
         
         float[] trimmedSamples = new float[lastSamplePosition * recordedClip.channels];
         Array.Copy(fullSamples, trimmedSamples, trimmedSamples.Length);
 
-        // Converteren
+        // Convert to WAV
         byte[] audioData = ConvertToWAV(trimmedSamples, recordedClip.channels, recordedClip.frequency);
         
         Destroy(recordedClip);
@@ -134,7 +134,7 @@ public class MicrophoneRecorder : MonoBehaviour
             if (Microphone.IsRecording(microphoneDevice))
             {
                 Microphone.End(microphoneDevice);
-                Debug.Log("Microfoon netjes afgesloten door OnDisable.");
+                Debug.Log("Microphone stopped via OnDisable.");
             }
             isRecording = false;
         }

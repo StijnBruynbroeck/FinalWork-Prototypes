@@ -110,7 +110,7 @@ public class ObjectSpawner : MonoBehaviour
         }
 
         isMorphed = false;
-        Debug.Log("Unmorph: Terug naar menselijk formulier!");
+        Debug.Log("Unmorph: Back to human form!");
     }
 
     private IEnumerator SnapToGround(GameObject obj)

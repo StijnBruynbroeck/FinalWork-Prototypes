@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.InputSystem; // Belangrijk voor jullie project!
+using UnityEngine.InputSystem; 
 
 public class AutomatedTester : MonoBehaviour
 {
@@ -12,7 +12,7 @@ public class AutomatedTester : MonoBehaviour
     [Header("De 50 Test Zinnen")]
     public List<string> testZinnen = new List<string>()
     {
-        // --- 20x LOGISCHE OBJECTEN (Verwachte score: HOOG) ---
+        // 20x LOGICAL objects (expected: HIGH score)
         "Verander me in een serverkast.",
         "Ik wil een bureaustoel zijn.",
         "Maak van mij een archiefkast.",
@@ -34,7 +34,7 @@ public class AutomatedTester : MonoBehaviour
         "Verander me in een laptop op een karretje.",
         "Maak van mij een metalen stellingkast.",
 
-        // --- 20x ONLOGISCHE OBJECTEN (Verwachte score: LAAG) ---
+        // 20x ILLOGICAL objects (expected: LOW score)
         "Ik ben een roze eenhoorn.",
         "Verander me in een baksteen.",
         "Maak me een middeleeuws zwaard.",
@@ -56,7 +56,7 @@ public class AutomatedTester : MonoBehaviour
         "Ik ben een rode tractor.",
         "Verander me in een iglo van ijs.",
 
-        // --- 10x EDGE CASES & TYPFOUTEN (Test de AI robuustheid) ---
+        // 10x EDGE CASES & typos (tests AI robustness)
         "Uh, wacht, ik weet het niet, doe maar iets.",
         "stúl",
         "Mag ik een ehhh, koffiemachine zijn?",
@@ -73,7 +73,6 @@ public class AutomatedTester : MonoBehaviour
 
     void Update()
     {
-        // Start de test als we op F12 drukken en we nog niet aan het testen zijn
         if (Keyboard.current != null && Keyboard.current.f12Key.wasPressedThisFrame && !isTesting)
         {
             StartCoroutine(RunTestBatch());
@@ -89,23 +88,19 @@ public class AutomatedTester : MonoBehaviour
         {
             bool isKlaar = false;
 
-            // We sturen de zin direct naar het LLM 'Brein', we slaan Whisper (audio) dus over!
             llmService.EvaluatePlausibility("Server Data Control Room", zin, (result) =>
             {
-                // We loggen de data direct in je CSV! (Tijd staat op 0 omdat we audio overslaan)
                 analytics.LogData(zin, result.prefab_name, result.score, 0); 
                 isKlaar = true;
             });
 
-            // Wacht net zolang tot de API een antwoord heeft gegeven
             yield return new WaitUntil(() => isKlaar);
 
-            // CRITIQUE BEVEILIGING: Wacht 2 seconden voordat je de volgende zin stuurt.
-            // Als je dit niet doet, blokkeert de Cloudflare-beveiliging van Groq je direct voor spam!
+            // Rate limit: 4s delay between requests to avoid Cloudflare blocks
             yield return new WaitForSeconds(4f); 
         }
 
-        Debug.Log("<color=green>Test compleet! Al je zinnen staan nu netjes in het CSV bestand.</color>");
+        Debug.Log("<color=green>Test complete! All results saved to CSV.</color>");
         isTesting = false;
     }
 }

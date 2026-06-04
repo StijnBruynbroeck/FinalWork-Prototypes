@@ -53,7 +53,7 @@ public class DoorAnimationGenerator : EditorWindow
         string closeClipPath = Path.Combine(savePath, "DeurDicht.anim");
         string controllerPath = Path.Combine(savePath, "DeurAnimator.controller");
 
-        // --- OPEN CLIP ---
+        // Open clip
         AnimationClip openClip = new AnimationClip();
         openClip.legacy = false;
         openClip.wrapMode = WrapMode.ClampForever;
@@ -68,7 +68,7 @@ public class DoorAnimationGenerator : EditorWindow
 
         AssetDatabase.CreateAsset(openClip, openClipPath);
 
-        // --- CLOSE CLIP ---
+        // Close clip
         AnimationClip closeClip = new AnimationClip();
         closeClip.legacy = false;
         closeClip.wrapMode = WrapMode.ClampForever;
@@ -83,7 +83,7 @@ public class DoorAnimationGenerator : EditorWindow
 
         AssetDatabase.CreateAsset(closeClip, closeClipPath);
 
-        // --- ANIMATOR CONTROLLER ---
+        // Animator controller
         AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
 
         AnimatorControllerLayer layer = controller.layers[0];
