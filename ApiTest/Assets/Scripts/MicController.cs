@@ -51,24 +51,19 @@ public class MicController : MonoBehaviour
 
     void StartMicrophone()
     {
-       
         audioSource.clip = Microphone.Start(microphoneDevice, true, 10, 44100);
-        
-       
-        audioSource.loop = true; 
-       
+        audioSource.loop = true;
         while (!(Microphone.GetPosition(microphoneDevice) > 0)) { }
-        
-        audioSource.Play(); 
+        audioSource.Play();
     }
 
     void OnDisable()
     {
-        // Check of we aan het opnemen zijn en stop het netjes
+        // Stop recording cleanly on disable
         if (Microphone.IsRecording(microphoneDevice))
         {
             Microphone.End(microphoneDevice);
-            Debug.Log("Microfoon opname gestopt.");
+            Debug.Log("Microphone recording stopped.");
         }
     }
 }

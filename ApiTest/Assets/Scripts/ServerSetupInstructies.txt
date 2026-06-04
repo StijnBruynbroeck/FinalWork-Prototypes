@@ -1,0 +1,55 @@
+SERVER SETUP INSTRUCTIES - LOKALE API SERVERS
+
+Voor dit project moeten er 2 lokale servers draaien:
+1. Ollama (LLM) - poort 11434
+2. Whisper (spraakherkenning) - poort 9090
+
+----------
+
+1. OLLAMA OPSTARTEN
+
+Open Command Prompt (cmd.exe) en voer uit:
+
+    ollama serve
+
+Controleer of hij draait door te surfen naar http://localhost:11434
+Of via command: curl http://localhost:11434
+
+(als ollama niet gevonden wordt: check PATH of run vanuit C:\Users\silam\AppData\Local\Programs\Ollama\)
+
+Beschikbare modellen op dit systeem:
+  - llama3:latest
+  - phi3:mini
+
+----------
+
+2. WHISPER OPSTARTEN
+
+Open Command Prompt (cmd.exe) en voer uit:
+
+    C:\whisper\Release\whisper-server.exe -m C:\whisper\Release\ggml-base.bin --port 9090
+
+Het modelbestand (ggml-base.bin) zit in dezelfde map.
+De server draait dan op http://localhost:9090
+
+De Unity app stuurt audio naar http://localhost:9090/inference
+
+----------
+
+3. TESTEN OF ALLES WERKT
+
+Ollama testen:
+
+    curl -X POST http://localhost:11434/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"llama3\",\"messages\":[{\"role\":\"user\",\"content\":\"hallo\"}]}"
+
+Whisper testen:
+
+    curl -X POST "http://localhost:9090/inference" -F "file=@test.wav" -F "response_format=json" -F "temperature=0.0" -F "language=en"
+
+----------
+
+4. UNITY STARTEN
+
+Zodra beide servers draaien, kan je de scene starten in Unity.
+- Houd T ingedrukt om op te nemen
+- Laat T los om transcriptie + LLM aanroep te starten
